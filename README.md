@@ -1,6 +1,14 @@
 # milk-feed
 
-MilkFeed is a minimalist baby feed logging app built with SvelteKit
+MilkFeed is a minimalist baby feed logging app built with SvelteKit. It uses:
+
+- 🛠️ SvelteKit for the framework
+- 📦 Vite for the build tool
+- 🔼 Vercel for deployment
+- 💾 LocalForage for data persistence
+- ⏰ formkit/tempo for handling time
+- 📊 Chart.js for analytics
+- 🧪 vitest for unit tests
 
 ## Developing
 
