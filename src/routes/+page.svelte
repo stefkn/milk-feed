@@ -86,3 +86,26 @@
 	{/if}
 </main>
 
+<style>
+	main {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 100vh;
+		font-family: Arial, sans-serif;
+	}
+
+	h1 {
+		margin-bottom: 1rem;
+	}
+
+	input {
+		margin-bottom: 1rem;
+	}
+
+	button {
+		padding: 0.5rem 1rem;
+		margin-bottom: 1rem;
+	}
+</style>
