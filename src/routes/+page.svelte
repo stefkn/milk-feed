@@ -84,23 +84,41 @@
 <main>
 	<h1>it is {currentTime}</h1>
 	<h1>
-		this feed has taken {Math.round(
+		this feed has taken {Math.floor(
 			feedDurationSeconds / 60,
 		)}:{feedDurationSeconds % 60}
 	</h1>
-	<input type="number" bind:value={bottleSize} />
-	{#if !isFeeding}
-		<button on:click={startFeedingTimer}>Start Feeding</button>
-	{/if}
-	{#if isFeeding}
-		{#if isPaused}
-			<button on:click={togglePauseFeedingTimer}>Continue</button>
+	<div>
+		<input type="number" bind:value={bottleSize} disabled={isFeeding} />
+		<label for="bottleSize">Bottle Size (ml)</label>
+	</div>
+	<div>
+		{#if !isFeeding}
+			<button on:click={startFeedingTimer}>Start Feeding</button>
 		{/if}
-		{#if !isPaused}
-			<button on:click={togglePauseFeedingTimer}>Pause</button>
+		{#if isFeeding}
+			{#if isPaused}
+				<button on:click={togglePauseFeedingTimer}>Continue</button>
+			{/if}
+			{#if !isPaused}
+				<button on:click={togglePauseFeedingTimer}>Pause</button>
+			{/if}
+			<button on:click={stopFeedingTimer}>Stop</button>
 		{/if}
-		<button on:click={stopFeedingTimer}>Stop</button>
-	{/if}
+	</div>
+	<div>
+		<ul>
+			{#each previousFeeds as feed}
+				<li>
+					{format(feed.start, {
+						date: "full",
+						time: "short",
+					})} - {format(feed.end, { time: "short" })} ({feed.duration}
+					seconds) - {feed.bottleSize}ml
+				</li>
+			{/each}
+		</ul>
+	</div>
 </main>
 
 <style>
