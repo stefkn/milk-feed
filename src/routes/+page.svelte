@@ -1,2 +1,65 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script>
+	import { onMount, onDestroy } from "svelte";
+	import { format, parse, addSecond, diffSeconds } from "@formkit/tempo";
+
+	let currentTime = format(new Date(), {
+		date: "full",
+		time: "short",
+	});
+	let currentFeed = {
+		start: new Date(),
+		end: new Date(),
+	};
+	let isFeeding = false;
+	let isPaused = false;
+	let bottleSize = 0;
+	let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
+
+	/**
+	 * @type {number | undefined}
+	 */
+	let stopwatchInterval;
+
+	function _setStopWatchInterval() {
+		stopwatchInterval = setInterval(() => {
+			currentFeed.end = addSecond(currentFeed.end);
+			feedDurationSeconds = diffSeconds(
+				currentFeed.end,
+				currentFeed.start,
+			);
+		}, 1000);
+	}
+
+	function startFeedingTimer() {
+		isFeeding = true;
+		isPaused = false;
+		currentFeed.start = new Date();
+		currentFeed.end = new Date();
+		_setStopWatchInterval();
+	}
+
+	function togglePauseFeedingTimer() {
+		if (isPaused) {
+			isPaused = false;
+			_setStopWatchInterval();
+		} else {
+			isPaused = true;
+			clearInterval(stopwatchInterval);
+		}
+	}
+
+	function stopFeedingTimer() {
+		clearInterval(stopwatchInterval);
+		isFeeding = false;
+		isPaused = false;
+		currentFeed = {
+			start: new Date(),
+			end: new Date(),
+		};
+		feedDurationSeconds = 0;
+	}
+
+	onDestroy(() => {
+		stopFeedingTimer();
+	});
+</script>
