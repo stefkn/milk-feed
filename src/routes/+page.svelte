@@ -2,9 +2,10 @@
 	import { onMount, onDestroy } from "svelte";
 	import { format, parse, addSecond, diffSeconds } from "@formkit/tempo";
 	import localforage from "localforage";
+	import "../app.css";
 
 	let currentTime = format(new Date(), {
-		date: "full",
+		date: "short",
 		time: "short",
 	});
 
@@ -110,72 +111,66 @@
 </script>
 
 <main>
-	<h1>it is {currentTime}</h1>
-	<h1>
-		this feed has taken {Math.floor(feedDurationSeconds / 60)
-			.toString()
-			.padStart(2, "0")}:{(feedDurationSeconds % 60)
-			.toString()
-			.padStart(2, "0")}
-	</h1>
-	<div>
-		<input
-			type="number"
-			bind:value={bottleSize}
-			disabled={isFeeding}
-			on:input={() => updateSavedBottleSize(bottleSize)}
-		/>
-		<label for="bottleSize">Bottle Size (ml)</label>
-	</div>
-	<div>
-		{#if !isFeeding}
-			<button on:click={startFeedingTimer}>Start Feeding</button>
-		{/if}
-		{#if isFeeding}
-			{#if isPaused}
-				<button on:click={togglePauseFeedingTimer}>Continue</button>
+	<div class="w-auto h-full bg-blue-100 m-auto mt-4 max-w-96 p-4 rounded-lg">
+		<h1>{currentTime}</h1>
+		<h1>
+			this feed has taken {Math.floor(feedDurationSeconds / 60)
+				.toString()
+				.padStart(2, "0")}:{(feedDurationSeconds % 60)
+				.toString()
+				.padStart(2, "0")}
+		</h1>
+		<div>
+			<label for="bottleSize">Bottle Size (ml)</label>
+			<input
+				type="number"
+				bind:value={bottleSize}
+				disabled={isFeeding}
+				on:input={() => updateSavedBottleSize(bottleSize)}
+			/>
+		</div>
+		<div>
+			{#if !isFeeding}
+				<button class="main-button bg-emerald-400" on:click={startFeedingTimer}>Start Feeding</button>
 			{/if}
-			{#if !isPaused}
-				<button on:click={togglePauseFeedingTimer}>Pause</button>
+			{#if isFeeding}
+				{#if isPaused}
+					<button class="main-button bg-emerald-400" on:click={togglePauseFeedingTimer}>Continue</button>
+				{/if}
+				{#if !isPaused}
+					<button class="main-button bg-yellow-400" on:click={togglePauseFeedingTimer}>Pause</button>
+				{/if}
+				<button class="main-button bg-red-400" on:click={stopFeedingTimer}>Stop</button>
 			{/if}
-			<button on:click={stopFeedingTimer}>Stop</button>
-		{/if}
-	</div>
-	<div>
-		<ul>
-			{#each previousFeeds as feed}
-				<li>
-					{format(feed.start, {
-						date: "full",
-						time: "short",
-					})} - {format(feed.end, { time: "short" })} ({feed.duration}
-					seconds) - {feed.bottleSize}ml
-				</li>
-			{/each}
-		</ul>
+		</div>
+		<div>
+			<h2>Previous Feeds</h2>
+			<ul>
+				{#each previousFeeds as feed}
+					<li>
+						{format(feed.start, {
+							date: "full",
+							time: "short",
+						})} - {format(feed.end, { time: "short" })} ({feed.duration}
+						seconds) - {feed.bottleSize}ml
+					</li>
+				{/each}
+			</ul>
+		</div>
 	</div>
 </main>
 
 <style>
-	main {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		height: 100vh;
-		font-family: Arial, sans-serif;
-	}
-
-	h1 {
-		margin-bottom: 1rem;
-	}
-
-	input {
-		margin-bottom: 1rem;
-	}
-
-	button {
-		padding: 0.5rem 1rem;
-		margin-bottom: 1rem;
+	.main-button {
+		border: none;
+		color: white;
+		padding: 15px 32px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+		margin: 14px 0px;
+		cursor: pointer;
+		border-radius: 8px;
 	}
 </style>
