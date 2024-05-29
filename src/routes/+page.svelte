@@ -83,8 +83,8 @@
 	}
 
 	/**
-     * @param {number} bottleSize
-     */
+	 * @param {number} bottleSize
+	 */
 	function updateSavedBottleSize(bottleSize) {
 		localforage.setItem("bottleSize", bottleSize).catch(function (err) {
 			console.error(err);
@@ -112,9 +112,11 @@
 <main>
 	<h1>it is {currentTime}</h1>
 	<h1>
-		this feed has taken {Math.floor(
-			feedDurationSeconds / 60,
-		)}:{feedDurationSeconds % 60}
+		this feed has taken {Math.floor(feedDurationSeconds / 60)
+			.toString()
+			.padStart(2, "0")}:{(feedDurationSeconds % 60)
+			.toString()
+			.padStart(2, "0")}
 	</h1>
 	<div>
 		<input
