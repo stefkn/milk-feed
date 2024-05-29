@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from "svelte";
 	import { format, parse, addSecond, diffSeconds } from "@formkit/tempo";
+	import localforage from "localforage";
 
 	let currentTime = format(new Date(), {
 		date: "full",
@@ -69,12 +70,25 @@
 				bottleSize,
 			},
 		];
+		localforage
+			.setItem("previousFeeds", previousFeeds)
+			.catch(function (err) {
+				console.error(err);
+			});
 		currentFeed = {
 			start: new Date(),
 			end: new Date(),
 		};
 		feedDurationSeconds = 0;
 	}
+
+	onMount(() => {
+		localforage.getItem("previousFeeds").then((value) => {
+			if (value) {
+				previousFeeds = value;
+			}
+		});
+	});
 
 	onDestroy(() => {
 		stopFeedingTimer();
