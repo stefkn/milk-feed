@@ -63,3 +63,26 @@
 		stopFeedingTimer();
 	});
 </script>
+
+<main>
+	<h1>it is {currentTime}</h1>
+	<h1>
+		this feed has taken {Math.round(
+			feedDurationSeconds / 60,
+		)}:{feedDurationSeconds % 60}
+	</h1>
+	<input type="number" bind:value={bottleSize} />
+	{#if !isFeeding}
+		<button on:click={startFeedingTimer}>Start Feeding</button>
+	{/if}
+	{#if isFeeding}
+		{#if isPaused}
+			<button on:click={togglePauseFeedingTimer}>Continue</button>
+		{/if}
+		{#if !isPaused}
+			<button on:click={togglePauseFeedingTimer}>Pause</button>
+		{/if}
+		<button on:click={stopFeedingTimer}>Stop</button>
+	{/if}
+</main>
+
