@@ -6,6 +6,12 @@
 		date: "full",
 		time: "short",
 	});
+
+	/**
+	 * @type {any[]}
+	 */
+	let previousFeeds = [];
+
 	let currentFeed = {
 		start: new Date(),
 		end: new Date(),
@@ -33,8 +39,10 @@
 	function startFeedingTimer() {
 		isFeeding = true;
 		isPaused = false;
-		currentFeed.start = new Date();
-		currentFeed.end = new Date();
+		currentFeed = {
+			start: new Date(),
+			end: new Date(),
+		};
 		_setStopWatchInterval();
 	}
 
@@ -52,6 +60,15 @@
 		clearInterval(stopwatchInterval);
 		isFeeding = false;
 		isPaused = false;
+		previousFeeds = [
+			...previousFeeds,
+			{
+				start: currentFeed.start,
+				end: currentFeed.end,
+				duration: feedDurationSeconds,
+				bottleSize,
+			},
+		];
 		currentFeed = {
 			start: new Date(),
 			end: new Date(),
