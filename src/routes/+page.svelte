@@ -82,10 +82,24 @@
 		feedDurationSeconds = 0;
 	}
 
+	/**
+     * @param {number} bottleSize
+     */
+	function updateSavedBottleSize(bottleSize) {
+		localforage.setItem("bottleSize", bottleSize).catch(function (err) {
+			console.error(err);
+		});
+	}
+
 	onMount(() => {
 		localforage.getItem("previousFeeds").then((value) => {
 			if (value) {
 				previousFeeds = value;
+			}
+		});
+		localforage.getItem("bottleSize").then((value) => {
+			if (value) {
+				bottleSize = value;
 			}
 		});
 	});
@@ -103,7 +117,12 @@
 		)}:{feedDurationSeconds % 60}
 	</h1>
 	<div>
-		<input type="number" bind:value={bottleSize} disabled={isFeeding} />
+		<input
+			type="number"
+			bind:value={bottleSize}
+			disabled={isFeeding}
+			on:input={() => updateSavedBottleSize(bottleSize)}
+		/>
 		<label for="bottleSize">Bottle Size (ml)</label>
 	</div>
 	<div>
