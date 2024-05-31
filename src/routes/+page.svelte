@@ -141,6 +141,12 @@
 		});
 	}
 
+	function deleteFeedHistory() {
+		localforage.removeItem("previousFeeds").then(() => {
+			previousFeeds = [];
+		});
+	}
+
 	onMount(() => {
 		localforage.getItem("previousFeeds").then((value) => {
 			if (value) {
@@ -206,6 +212,9 @@
 						seconds) - {feed.bottleSize}ml
 					</li>
 				{/each}
+				<button class="main-button bg-red-400" on:click={deleteFeedHistory}>
+					Delete all previous feeds
+				</button>
 			</ul>
 
 			<div>
