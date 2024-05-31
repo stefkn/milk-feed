@@ -1,6 +1,8 @@
 <script>
 	import { onMount, onDestroy } from "svelte";
+	import { browser } from '$app/environment';
 	import { format, parse, addSecond, diffSeconds } from "@formkit/tempo";
+	import Chart from "chart.js/auto";
 	import localforage from "localforage";
 	import "../app.css";
 
@@ -22,6 +24,11 @@
 	let isPaused = false;
 	let bottleSize = 0;
 	let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
+
+	/**
+     * @type {Chart | undefined}
+     */
+	let feedChart;
 
 	/**
 	 * @type {number | undefined}
@@ -81,6 +88,45 @@
 			end: new Date(),
 		};
 		feedDurationSeconds = 0;
+	function updateFeedChart() {
+		if (!browser) {
+			return;
+		}
+
+		const ctx = document.getElementById("myChart");
+
+		if (feedChart instanceof Chart && feedChart) {
+			feedChart.destroy();
+		}
+
+		const previousFeedTimes = previousFeeds.map((feed) =>
+			format(feed.start, { time: "short" }),
+		);
+
+		const previousFeedDurations = previousFeeds.map((feed) => feed.duration);
+
+		if (ctx && ctx instanceof HTMLCanvasElement) {
+			feedChart = new Chart(ctx, {
+				type: "bar",
+				data: {
+					labels: previousFeedTimes,
+					datasets: [
+						{
+							label: "seconds",
+							data: previousFeedDurations,
+							borderWidth: 1,
+						},
+					],
+				},
+				options: {
+					scales: {
+						y: {
+							beginAtZero: true,
+						},
+					},
+				},
+			});
+		}
 	}
 
 	/**
