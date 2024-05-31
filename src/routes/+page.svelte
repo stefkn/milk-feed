@@ -69,6 +69,11 @@
 		clearInterval(stopwatchInterval);
 		isFeeding = false;
 		isPaused = false;
+
+		if (feedDurationSeconds === 0) {
+			return;
+		}
+
 		previousFeeds = [
 			...previousFeeds,
 			{
