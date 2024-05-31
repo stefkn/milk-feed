@@ -88,6 +88,9 @@
 			end: new Date(),
 		};
 		feedDurationSeconds = 0;
+		updateFeedChart();
+	}
+
 	function updateFeedChart() {
 		if (!browser) {
 			return;
@@ -141,9 +144,11 @@
 	onMount(() => {
 		localforage.getItem("previousFeeds").then((value) => {
 			if (value) {
-				previousFeeds = value;
+				previousFeeds = value.filter((feed) => feed.duration > 0);
 			}
-		});
+		}).then(() => {
+			updateFeedChart();
+		})
 		localforage.getItem("bottleSize").then((value) => {
 			if (value) {
 				bottleSize = value;
@@ -202,6 +207,10 @@
 					</li>
 				{/each}
 			</ul>
+
+			<div>
+				<canvas id="myChart"></canvas>
+			</div>
 		</div>
 	</div>
 </main>
