@@ -193,16 +193,28 @@
 		</div>
 		<div>
 			{#if !isFeeding}
-				<button class="main-button bg-emerald-400" on:click={startFeedingTimer}>Start Feeding</button>
+				<button
+					class="main-button bg-emerald-400"
+					on:click={startFeedingTimer}>Start Feeding</button
+				>
 			{/if}
 			{#if isFeeding}
 				{#if isPaused}
-					<button class="main-button bg-emerald-400" on:click={togglePauseFeedingTimer}>Continue</button>
+					<button
+						class="main-button bg-emerald-400"
+						on:click={togglePauseFeedingTimer}>Continue</button
+					>
 				{/if}
 				{#if !isPaused}
-					<button class="main-button bg-yellow-400" on:click={togglePauseFeedingTimer}>Pause</button>
+					<button
+						class="main-button bg-yellow-400"
+						on:click={togglePauseFeedingTimer}>Pause</button
+					>
 				{/if}
-				<button class="main-button bg-red-400" on:click={stopFeedingTimer}>Stop</button>
+				<button
+					class="main-button bg-red-400"
+					on:click={stopFeedingTimer}>Stop</button
+				>
 			{/if}
 		</div>
 		<div>
