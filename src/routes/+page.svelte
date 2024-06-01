@@ -1,10 +1,14 @@
 <script>
 	import { onMount, onDestroy } from "svelte";
-	import { browser } from '$app/environment';
+	import { browser } from "$app/environment";
 	import { format, parse, addSecond, diffSeconds } from "@formkit/tempo";
 	import Chart from "chart.js/auto";
 	import localforage from "localforage";
 	import "../app.css";
+
+	const CHART_FEEDING_TIME = "feeding_time";
+	const CHART_FEEDING_SIZE = "bottle_size";
+	const CHART_FEEDING_SPEED = "feeding_speed";
 
 	let currentTime = format(new Date(), {
 		date: "short",
@@ -24,10 +28,11 @@
 	let isPaused = false;
 	let bottleSize = 0;
 	let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
+	let chartType = CHART_FEEDING_TIME;
 
 	/**
-     * @type {Chart | undefined}
-     */
+	 * @type {Chart | undefined}
+	 */
 	let feedChart;
 
 	/**
@@ -235,6 +240,11 @@
 			</ul>
 
 			<div>
+				<select bind:value={chartType} on:change={updateFeedChart}>
+					<option value={CHART_FEEDING_TIME}>feeding time</option>
+					<option value={CHART_FEEDING_SIZE}>bottle size</option>
+					<option value={CHART_FEEDING_SPEED}>feeding speed</option>
+				</select>
 				<canvas id="myChart"></canvas>
 			</div>
 		</div>
