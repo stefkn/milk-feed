@@ -116,29 +116,57 @@
 			format(feed.start, { time: "short" }),
 		);
 
-		const previousFeedDurations = previousFeeds.map((feed) => feed.duration);
+		const previousFeedDurations = previousFeeds.map(
+			(feed) => feed.duration,
+		);
 
-		if (ctx && ctx instanceof HTMLCanvasElement) {
-			feedChart = new Chart(ctx, {
-				type: "bar",
-				data: {
-					labels: previousFeedTimes,
-					datasets: [
-						{
-							label: "seconds",
-							data: previousFeedDurations,
-							borderWidth: 1,
-						},
-					],
-				},
-				options: {
-					scales: {
-						y: {
-							beginAtZero: true,
+		const previousFeedSizes = previousFeeds.map((feed) => feed.bottleSize);
+
+		const previousFeedSpeeds = previousFeeds.map((feed) => {
+			if (feed.duration === 0) {
+				return 0;
+			}
+			return feed.bottleSize / feed.duration;
+		});
+
+		const chartGeneratorFunction = (
+			/** @type {string} */ label,
+			/** @type {any[]} */ data,
+		) => {
+			if (ctx && ctx instanceof HTMLCanvasElement) {
+				feedChart = new Chart(ctx, {
+					type: "bar",
+					data: {
+						labels: previousFeedTimes,
+						datasets: [
+							{
+								label: label,
+								data: data,
+								borderWidth: 1,
+							},
+						],
+					},
+					options: {
+						scales: {
+							y: {
+								beginAtZero: true,
+							},
 						},
 					},
-				},
-			});
+				});
+			}
+		};
+
+		switch (chartType) {
+			case CHART_FEEDING_TIME:
+				chartGeneratorFunction("seconds", previousFeedDurations);
+				break;
+			case CHART_FEEDING_SIZE:
+				chartGeneratorFunction("ml", previousFeedSizes);
+				break;
+			case CHART_FEEDING_SPEED:
+				chartGeneratorFunction("ml/s", previousFeedSpeeds);
+				break;
 		}
 	}
 
