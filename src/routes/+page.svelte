@@ -158,13 +158,16 @@
 	}
 
 	onMount(() => {
-		localforage.getItem("previousFeeds").then((value) => {
-			if (value) {
-				previousFeeds = value.filter((feed) => feed.duration > 0);
-			}
-		}).then(() => {
-			updateFeedChart();
-		})
+		localforage
+			.getItem("previousFeeds")
+			.then((value) => {
+				if (value) {
+					previousFeeds = value.filter((feed) => feed.duration > 0);
+				}
+			})
+			.then(() => {
+				updateFeedChart();
+			});
 		localforage.getItem("bottleSize").then((value) => {
 			if (value) {
 				bottleSize = value;
@@ -179,14 +182,14 @@
 
 <main>
 	<div class="w-auto h-full bg-blue-100 m-auto mt-4 max-w-96 p-4 rounded-lg">
-		<h1>{currentTime}</h1>
-		<h1>
+		<h3>{currentTime}</h3>
+		<h3>
 			this feed has taken {Math.floor(feedDurationSeconds / 60)
 				.toString()
 				.padStart(2, "0")}:{(feedDurationSeconds % 60)
 				.toString()
 				.padStart(2, "0")}
-		</h1>
+		</h3>
 		<div>
 			<label for="bottleSize">Bottle Size (ml)</label>
 			<input
@@ -234,7 +237,10 @@
 						seconds) - {feed.bottleSize}ml
 					</li>
 				{/each}
-				<button class="main-button bg-red-400" on:click={deleteFeedHistory}>
+				<button
+					class="main-button bg-red-400"
+					on:click={deleteFeedHistory}
+				>
 					Delete all previous feeds
 				</button>
 			</ul>
