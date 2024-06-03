@@ -381,18 +381,3 @@
 		</div>
 	</div>
 </main>
-
-<style>
-	.main-button {
-		border: none;
-		color: white;
-		padding: 15px 32px;
-		text-align: center;
-		text-decoration: none;
-		display: inline-block;
-		font-size: 16px;
-		margin: 14px 0px;
-		cursor: pointer;
-		border-radius: 8px;
-	}
-</style>
