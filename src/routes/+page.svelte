@@ -185,6 +185,14 @@
 		});
 	}
 
+	/**
+     * @param {any[]} event
+     */
+	function updatePreviousFeeds(event) {
+		previousFeeds = event.detail || [];
+		updateFeedChart();
+	}
+
 	onMount(() => {
 		localforage
 			.getItem("previousFeeds")
@@ -281,6 +289,9 @@
 				</select>
 				<canvas id="myChart"></canvas>
 			</div>
+		<div>
+			<h2 class="mt-4 text-xl max-w-xl m-auto">Previous Feeds</h2>
+			<PreviousFeedsList {previousFeeds} on:updatepreviousfeeds={updatePreviousFeeds(previousFeeds)} />
 		</div>
 	</div>
 </main>
