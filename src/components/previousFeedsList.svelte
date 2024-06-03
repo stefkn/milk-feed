@@ -27,10 +27,17 @@
     }
 </script>
 
-<ul class="max-w-xl text-gray-500 list-disc list-inside dark:text-gray-400 m-auto">
-    {#each previousFeeds as feed}
-        <PreviousFeed {feed} />
-    {/each}
+<ul
+    class="max-w-xl text-gray-500 list-disc list-inside dark:text-gray-400 m-auto"
+>
+    {#if previousFeeds.length === 0}
+        <li class="text-center">No previous feeds</li>
+    {:else}    
+        {#each previousFeeds as feed}
+            <PreviousFeed {feed} on:deletefeed={deletePreviousFeed} />
+        {/each}
+    {/if}
+
     <button class="main-button bg-red-600 mt-4" on:click={deleteFeedHistory}>
         Delete all previous feeds
     </button>
