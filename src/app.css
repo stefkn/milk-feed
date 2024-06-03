@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+html.dark {
+    h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
+        color: rgb(255, 255, 255);
+    }
+}
+
+h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
+    color: rgb(16, 16, 16);
+}
+
+body {
+    background-color: rgb(32, 32, 32);
+}
+
+html {
+    .overlay {
+        display: none;
+    }
+}
+
