@@ -256,78 +256,31 @@
 </script>
 
 <main>
-	<div class="w-auto h-full bg-blue-100 m-auto mt-4 max-w-96 p-4 rounded-lg">
-		<h3>{currentTime}</h3>
-		<h3>
-			this feed has taken {Math.floor(feedDurationSeconds / 60)
-				.toString()
-				.padStart(2, "0")}:{(feedDurationSeconds % 60)
-				.toString()
-				.padStart(2, "0")}
-		</h3>
-		<div>
-			<label for="bottleSize">Bottle Size (ml)</label>
-			<input
-				type="number"
-				bind:value={bottleSize}
-				disabled={isFeeding}
-				on:input={() => updateSavedBottleSize(bottleSize)}
-			/>
-		</div>
-		<div>
-			{#if !isFeeding}
-				<button
-					class="main-button bg-emerald-400"
-					on:click={startFeedingTimer}>Start Feeding</button
+		{#if previousFeeds.length === 0}
+			<div class="max-w-xl m-auto">
+				<h2 class="mt-4 text-xl max-w-xl m-auto">Feeding Chart</h2>
+				<p>No feeds yet.</p>
+			</div>
+		{:else}
+			<div class="max-w-xl m-auto">
+				<h2 class="mt-4 text-xl max-w-xl m-auto">Feeding Chart</h2>
+				<canvas id="myChart"></canvas>
+				<label
+					for="chartType"
+					class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+					>Chart Type</label
 				>
-			{/if}
-			{#if isFeeding}
-				{#if isPaused}
-					<button
-						class="main-button bg-emerald-400"
-						on:click={togglePauseFeedingTimer}>Continue</button
-					>
-				{/if}
-				{#if !isPaused}
-					<button
-						class="main-button bg-yellow-400"
-						on:click={togglePauseFeedingTimer}>Pause</button
-					>
-				{/if}
-				<button
-					class="main-button bg-red-400"
-					on:click={stopFeedingTimer}>Stop</button
+				<select
+					bind:value={chartType}
+					on:change={updateFeedChart}
+					class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 				>
-			{/if}
-		</div>
-		<div>
-			<h2>Previous Feeds</h2>
-			<ul>
-				{#each previousFeeds as feed}
-					<li>
-						{format(feed.start, {
-							date: "full",
-							time: "short",
-						})} - {format(feed.end, { time: "short" })} ({feed.duration}
-						seconds) - {feed.bottleSize}ml
-					</li>
-				{/each}
-				<button
-					class="main-button bg-red-400"
-					on:click={deleteFeedHistory}
-				>
-					Delete all previous feeds
-				</button>
-			</ul>
-
-			<div>
-				<select bind:value={chartType} on:change={updateFeedChart}>
 					<option value={CHART_FEEDING_TIME}>feeding time</option>
 					<option value={CHART_FEEDING_SIZE}>bottle size</option>
 					<option value={CHART_FEEDING_SPEED}>feeding speed</option>
 				</select>
-				<canvas id="myChart"></canvas>
 			</div>
+		{/if}
 		<div>
 			<h2 class="mt-4 text-xl max-w-xl m-auto">Previous Feeds</h2>
 			<PreviousFeedsList {previousFeeds} on:updatepreviousfeeds={updatePreviousFeeds(previousFeeds)} />
