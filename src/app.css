@@ -23,3 +23,20 @@ html {
     }
 }
 
+html.nv {
+    filter: contrast(1.8) brightness(0.7);
+    .overlay {
+        background-color: rgb(255, 0, 0);
+        background-blend-mode: color;
+        height: 100%;
+        width: 100%;
+        position: fixed;
+        display: block;
+        mix-blend-mode: color;
+        pointer-events: none
+    }
+    h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
+        color: rgb(255, 174, 174);
+    }
+}
+
