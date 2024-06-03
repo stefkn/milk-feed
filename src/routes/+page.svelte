@@ -1,9 +1,11 @@
 <script>
-	import { onMount, onDestroy } from "svelte";
 	import { browser } from "$app/environment";
+	import { onMount, onDestroy } from "svelte";
 	import { format, parse, addSecond, diffSeconds } from "@formkit/tempo";
 	import Chart from "chart.js/auto";
 	import localforage from "localforage";
+
+	import PreviousFeedsList from "../components/previousFeedsList.svelte";
 	import "../app.css";
 
 	const CHART_FEEDING_TIME = "feeding_time";
@@ -110,6 +112,10 @@
 
 		if (feedChart instanceof Chart && feedChart) {
 			feedChart.destroy();
+		}
+
+		if (previousFeeds.length === 0) {
+			return;
 		}
 
 		const previousFeedTimes = previousFeeds.map((feed) =>
