@@ -7,6 +7,7 @@
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
 	import "../app.css";
+	import { toggleLightDarkMode, toggleNightVision } from "../lib/lightDarkMode";
 
 	const CHART_FEEDING_TIME = "feeding_time";
 	const CHART_FEEDING_SIZE = "bottle_size";
@@ -183,34 +184,6 @@
 		localforage.setItem("bottleSize", bottleSize).catch(function (err) {
 			console.error(err);
 		});
-	}
-
-
-	function toggleLightDarkMode() {
-		if (document.documentElement.classList.contains("nv")) {
-			document.documentElement.classList.remove("nv");
-			document.documentElement.classList.add("dark");
-			localStorage.theme = "dark";
-			return;
-		}
-		if (document.documentElement.classList.contains("dark")) {
-			document.documentElement.classList.remove("dark");
-			localStorage.theme = "light";
-		} else {
-			document.documentElement.classList.add("dark");
-			localStorage.theme = "dark";
-		}
-	}
-
-	function toggleNightVision() {
-		if (document.documentElement.classList.contains("nv")) {
-			document.documentElement.classList.remove("nv");
-			localStorage.theme = "dark";
-		} else {
-			document.documentElement.classList.add("nv");
-			document.documentElement.classList.add("dark");
-			localStorage.theme = "nv";
-		}
 	}
 
 	/**
