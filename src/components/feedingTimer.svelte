@@ -1,7 +1,7 @@
 <script>
     import { onMount, onDestroy, createEventDispatcher } from "svelte";
     import localforage from "localforage";
-    import { format, parse, addSecond, diffSeconds } from "@formkit/tempo";
+    import { format, addSecond, diffSeconds } from "@formkit/tempo";
 
     let currentTime = format(new Date(), {
 		date: "short",
