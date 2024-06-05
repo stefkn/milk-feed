@@ -1,29 +1,24 @@
 <script>
     import PreviousFeed from "./previousFeed.svelte";
-    import localforage from "localforage";
     import { createEventDispatcher } from 'svelte';
 
     import "../app.css";
     
 	const dispatch = createEventDispatcher();
+
     /**
      * @type {any[]}
      */
     export let previousFeeds = [];
 
     function deletePreviousFeed(event) {
-        previousFeeds = previousFeeds.filter((f) => f !== event.detail);
-        localforage.setItem("previousFeeds", previousFeeds);
-
-        dispatch('updatepreviousfeeds', previousFeeds);
+        const newPreviousFeeds = previousFeeds.filter((f) => f !== event.detail);
+        dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
 
     function deleteFeedHistory() {
-        localforage.removeItem("previousFeeds").then(() => {
-            previousFeeds = [];
-        });
-
-        dispatch('updatepreviousfeeds', previousFeeds);
+        const newPreviousFeeds = [];
+        dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
 </script>
 
@@ -31,7 +26,7 @@
     class="max-w-xl text-gray-500 list-disc list-inside dark:text-gray-400 m-auto"
 >
     {#if previousFeeds.length === 0}
-        <li class="text-center">No previous feeds</li>
+        <p class="text-left">No previous feeds.</p>
     {:else}    
         {#each previousFeeds as feed}
             <PreviousFeed {feed} on:deletefeed={deletePreviousFeed} />
