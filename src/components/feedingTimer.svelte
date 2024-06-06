@@ -21,6 +21,7 @@
 	let isFeeding = false;
 	let isPaused = false;
     let bottleSize = 0;
+    let remainingMilk = 0;
 	let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
 
     const dispatch = createEventDispatcher();
@@ -58,7 +59,10 @@
             start: currentFeed.start,
             end: currentFeed.end,
             duration: feedDurationSeconds,
-            bottleSize,
+            remainingMilk: remainingMilk,
+            bottleSize: bottleSize,
+            type: "bottle",
+
         }
 
         dispatch('newfeedfinished', newFinishedFeed);
@@ -143,21 +147,35 @@
             </div>
         {/if}
     </div>
-    <div>
-        <label
-            for="bottleSize"
-            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-            >Bottle Size (ml)</label
-        >
-        <input
-            type="number"
-            bind:value={bottleSize}
-            disabled={isFeeding}
-            on:input={() => updateSavedBottleSize(bottleSize)}
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        />
+    <div class="flex gap-4">
+        <div>
+            <label
+                for="bottleSize"
+                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >Bottle Size (ml)</label
+            >
+            <input
+                type="number"
+                bind:value={bottleSize}
+                disabled={isFeeding}
+                on:input={() => updateSavedBottleSize(bottleSize)}
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            />
+        </div>
+        <div>
+            <label
+                for="bottleSize"
+                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >Milk remaining (ml)</label
+            >
+            <input
+                type="number"
+                bind:value={remainingMilk}
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            />
+        </div>
     </div>
-    <div>
+    <div class="flex justify-center gap-4">
         {#if !isFeeding}
             <button
                 class="main-button bg-emerald-600 mt-4 hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:focus:ring-emerald-700"
