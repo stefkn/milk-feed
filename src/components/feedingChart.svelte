@@ -41,12 +41,16 @@
             if (feed.duration === 0) {
                 return 0;
             }
-            return feed.bottleSize / feed.duration;
+            if (feed.remainingMilk === 0) {
+                return feed.bottleSize / feed.duration;
+            } else {
+                return (feed.bottleSize - feed.remainingMilk) / feed.duration;
+            }
         });
 
         const chartGeneratorFunction = (
             /** @type {string} */ label: string,
-            /** @type {any[]} */ data: number[],
+            /** @type {any[]} */ dataSet: number[],
         ) => {
             if (ctx && ctx instanceof HTMLCanvasElement) {
                 if (feedChart instanceof Chart) {
@@ -59,7 +63,7 @@
                         datasets: [
                             {
                                 label: label,
-                                data: data,
+                                data: dataSet,
                                 borderWidth: 1,
                             },
                         ],
@@ -78,10 +82,13 @@
         switch (chartType) {
             case CHART_FEEDING_TIME:
                 chartGeneratorFunction("seconds", previousFeedDurations);
+                break
             case CHART_FEEDING_SIZE:
                 chartGeneratorFunction("ml", previousFeedSizes);
+                break
             case CHART_FEEDING_SPEED:
                 chartGeneratorFunction("ml/s", previousFeedSpeeds);
+                break
         }
 
         return () => {}
