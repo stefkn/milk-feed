@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+    import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
     import Chart from "chart.js/auto";
@@ -8,24 +9,17 @@
     const CHART_FEEDING_SPEED = "feeding_speed";
     let chartType = CHART_FEEDING_TIME;
 
-    /**
-     * @type {any[]}
-     */
-    export let previousFeeds = [];
+    export let previousFeeds: FeedLog[] = [];
+    let feedChart: Chart | undefined = undefined;
 
-    /**
-     * @type {Chart | undefined}
-     */
-    let feedChart;
-
-    export function updateFeedChart(previousFeeds) {
+    export function updateFeedChart(previousFeeds: FeedLog[]) {
         if (!browser) {
             return;
         }
 
         const ctx = document.getElementById("myChart");
 
-        if (feedChart instanceof Chart && feedChart) {
+        if (feedChart instanceof Chart) {
             feedChart.destroy();
         }
 
@@ -51,10 +45,13 @@
         });
 
         const chartGeneratorFunction = (
-            /** @type {string} */ label,
-            /** @type {any[]} */ data,
+            /** @type {string} */ label: string,
+            /** @type {any[]} */ data: number[],
         ) => {
             if (ctx && ctx instanceof HTMLCanvasElement) {
+                if (feedChart instanceof Chart) {
+                    feedChart.destroy();
+                }
                 feedChart = new Chart(ctx, {
                     type: "bar",
                     data: {
@@ -81,14 +78,13 @@
         switch (chartType) {
             case CHART_FEEDING_TIME:
                 chartGeneratorFunction("seconds", previousFeedDurations);
-                break;
             case CHART_FEEDING_SIZE:
                 chartGeneratorFunction("ml", previousFeedSizes);
-                break;
             case CHART_FEEDING_SPEED:
                 chartGeneratorFunction("ml/s", previousFeedSpeeds);
-                break;
         }
+
+        return () => {}
     }
 </script>
 
