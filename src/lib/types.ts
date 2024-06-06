@@ -9,3 +9,6 @@ export type FeedLog = {
     type: string;
 }
 
+export interface FeedingChartInterface {
+    updateFeedChart: (previousFeeds: FeedLog[]) => void;
+}

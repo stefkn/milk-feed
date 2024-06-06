@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
 	import { onMount } from "svelte";
 	import localforage from "localforage";
+	import type { FeedLog, FeedingChartInterface } from "../lib/types";
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
 	import FeedingTimer from "../components/feedingTimer.svelte";
@@ -13,14 +14,11 @@
 		restoreLightDarkModeFromLocalStorage,
 	} from "../lib/lightDarkMode";
 
-	/**
-	 * @type {any[]}
-	 */
-	let previousFeeds = [];
+	export let previousFeeds: FeedLog[] = [];
 
-	let feedingChartComponent;
+	let feedingChartComponent: FeedingChartInterface;
 
-	function handleNewFeedFinished(event) {
+	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
 		console.log("new feed finished!", event.detail);
 
 		previousFeeds = [...previousFeeds, event.detail];
@@ -34,10 +32,7 @@
 		feedingChartComponent.updateFeedChart(previousFeeds);
 	}
 
-	/**
-	 * @param {any[]} event
-	 */
-	function updatePreviousFeeds(event) {
+	function updatePreviousFeeds(event: CustomEvent<FeedLog[]>) {
 		console.log("updating previous feeds", event);
 		previousFeeds = event.detail;
 
@@ -54,7 +49,7 @@
 		localforage
 			.getItem("previousFeeds")
 			.then((value) => {
-				if (value) {
+				if (value instanceof Array) {
 					previousFeeds = value.filter((feed) => feed.duration > 0);
 				}
 			})

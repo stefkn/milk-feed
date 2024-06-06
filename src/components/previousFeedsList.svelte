@@ -7,9 +7,6 @@
     
 	const dispatch = createEventDispatcher();
 
-    /**
-     * @type {any[]}
-     */
     export let previousFeeds: FeedLog[] = [];
 
     function deletePreviousFeed(event: any) {
