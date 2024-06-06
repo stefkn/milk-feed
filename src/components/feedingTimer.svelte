@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { onMount, onDestroy, createEventDispatcher } from "svelte";
     import localforage from "localforage";
     import { format, addSecond, diffSeconds } from "@formkit/tempo";
@@ -11,7 +11,7 @@
     /**
      * @type {number | undefined}
      */
-    let stopwatchInterval;
+    let stopwatchInterval: number | undefined;
 
     let currentFeed = {
 		start: new Date(),
@@ -83,7 +83,7 @@
 	/**
 	 * @param {number} bottleSize
 	 */
-	function updateSavedBottleSize(bottleSize) {
+	function updateSavedBottleSize(bottleSize: number) {
 		localforage.setItem("bottleSize", bottleSize).catch(function (err) {
 			console.error(err);
 		});
@@ -93,6 +93,10 @@
         localforage
             .getItem("bottleSize")
             .then((value) => {
+                if (typeof value !== "number") {
+                    bottleSize = 0;
+                    return
+                }
                 bottleSize = value || 0;
             })
             .catch(function (err) {
