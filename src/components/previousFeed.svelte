@@ -1,14 +1,17 @@
-<script>
+<script lang="ts">
     import { format } from "@formkit/tempo";
     import { createEventDispatcher } from 'svelte';
+    import type { FeedLog } from '../lib/types';
 
 	const dispatch = createEventDispatcher();
 
-    export let feed = {
+    export let feed:FeedLog = {
+        feedId: new Date().getTime().toString(),
         start: new Date(),
         end: new Date(),
         duration: 0,
         bottleSize: 0,
+        type: "bottle",
     };
     
 
