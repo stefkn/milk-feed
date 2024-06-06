@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
     import PreviousFeed from "./previousFeed.svelte";
     import { createEventDispatcher } from 'svelte';
+    import type { FeedLog } from '../lib/types';
 
     import "../app.css";
     
@@ -9,15 +10,15 @@
     /**
      * @type {any[]}
      */
-    export let previousFeeds = [];
+    export let previousFeeds: FeedLog[] = [];
 
-    function deletePreviousFeed(event) {
+    function deletePreviousFeed(event: any) {
         const newPreviousFeeds = previousFeeds.filter((f) => f !== event.detail);
         dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
 
     function deleteFeedHistory() {
-        const newPreviousFeeds = [];
+        const newPreviousFeeds: FeedLog[] = [];
         dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
 </script>
