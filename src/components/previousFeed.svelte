@@ -18,7 +18,11 @@
     let isEditing = false;
     let updatedFeed = { ...feed };
     let updatedFeedDuration = diffSeconds(updatedFeed.end, updatedFeed.start);
-    let updatedFeedBoundStart = format(updatedFeed.start, "YYYY-MM-DDThh:mm", "en");
+    let updatedFeedBoundStart = format(
+        updatedFeed.start,
+        "YYYY-MM-DDThh:mm",
+        "en",
+    );
     let updatedFeedBoundEnd = format(updatedFeed.end, "YYYY-MM-DDThh:mm", "en");
 
     function handleFormSubmit(event: any) {
@@ -49,33 +53,88 @@
 >
     <div class="flex justify-between items-center gap-2">
         {#if isEditing}
-            <form class="flex flex-wrap gap-4 gap-y-0 items-center" on:submit={handleFormSubmit}>
+            <form
+                class="flex flex-wrap gap-4 gap-y-0 items-center"
+                on:submit={handleFormSubmit}
+            >
                 <div>
-                    <label for="start" class="block text-sm font-medium text-gray-900 dark:text-white">Start</label>
-                    <input type="datetime-local" name="start" class="my-2 p-2.5 bg-gray-500 rounded-lg w-48" bind:value={updatedFeedBoundStart} on:change={handleUpdateFeedChange} />
+                    <label
+                        for="start"
+                        class="block text-sm font-medium text-gray-900 dark:text-white"
+                        >Start</label
+                    >
+                    <input
+                        type="datetime-local"
+                        name="start"
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-48"
+                        bind:value={updatedFeedBoundStart}
+                        on:change={handleUpdateFeedChange}
+                    />
                 </div>
 
                 <div>
-                    <label for="end" class="block text-sm font-medium text-gray-900 dark:text-white">End</label>
-                    <input type="datetime-local" name="end" class="my-2 p-2.5 bg-gray-500 rounded-lg w-48" bind:value={updatedFeedBoundEnd} on:change={handleUpdateFeedChange} />
+                    <label
+                        for="end"
+                        class="block text-sm font-medium text-gray-900 dark:text-white"
+                        >End</label
+                    >
+                    <input
+                        type="datetime-local"
+                        name="end"
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-48"
+                        bind:value={updatedFeedBoundEnd}
+                        on:change={handleUpdateFeedChange}
+                    />
                 </div>
 
                 <div>
-                    <label for="duration" class="block text-sm font-medium text-gray-900 dark:text-white">Duration (s)</label>
-                    <input type="number" class="my-2 p-2.5 bg-gray-700 rounded-lg w-24" bind:value={updatedFeedDuration} disabled />
+                    <label
+                        for="duration"
+                        class="block text-sm font-medium text-gray-900 dark:text-white"
+                        >Duration (s)</label
+                    >
+                    <input
+                        type="number"
+                        class="my-2 p-2.5 bg-gray-700 rounded-lg w-24"
+                        bind:value={updatedFeedDuration}
+                        disabled
+                    />
                 </div>
 
                 <div>
-                    <label for="bottleSize" class="block text-sm font-medium text-gray-900 dark:text-white">Bottle Size (ml)</label>
-                    <input type="number" class="my-2 p-2.5 bg-gray-500 rounded-lg w-24" bind:value={updatedFeed.bottleSize} on:change={handleUpdateFeedChange} />
+                    <label
+                        for="bottleSize"
+                        class="block text-sm font-medium text-gray-900 dark:text-white"
+                        >Bottle Size (ml)</label
+                    >
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-24"
+                        bind:value={updatedFeed.bottleSize}
+                        on:change={handleUpdateFeedChange}
+                    />
                 </div>
 
                 <div>
-                    <label for="remainingMilk" class="block text-sm font-medium text-gray-900 dark:text-white">Remaining Milk (ml)</label>
-                    <input type="number" class="my-2 p-2.5 bg-gray-500 rounded-lg w-28" bind:value={updatedFeed.remainingMilk} on:change={handleUpdateFeedChange} />
+                    <label
+                        for="remainingMilk"
+                        class="block text-sm font-medium text-gray-900 dark:text-white"
+                        >Remaining Milk (ml)</label
+                    >
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
+                        bind:value={updatedFeed.remainingMilk}
+                        on:change={handleUpdateFeedChange}
+                    />
                 </div>
 
-                <button class="bg-emerald-500 p-2 rounded-lg mt-4"
+                <button
+                    class="bg-emerald-500 p-2 rounded-lg mt-4"
                     type="submit"
                 >
                     Save
@@ -108,7 +167,9 @@
         {/if}
         <div class="flex gap-2">
             <button
-                on:click={() => {isEditing = !isEditing;}}
+                on:click={() => {
+                    isEditing = !isEditing;
+                }}
                 class="bg-blue-400 p-1 rounded-md h-8"
             >
                 <svg
