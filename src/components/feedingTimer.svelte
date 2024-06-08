@@ -2,11 +2,12 @@
     import { onMount, onDestroy, createEventDispatcher } from "svelte";
     import localforage from "localforage";
     import { format, addSecond, diffSeconds } from "@formkit/tempo";
+    import type { FeedLog } from "$lib/types";
 
     let currentTime = format(new Date(), {
-		date: "short",
-		time: "short",
-	});
+        date: "short",
+        time: "short",
+    });
 
     /**
      * @type {number | undefined}
@@ -14,15 +15,15 @@
     let stopwatchInterval: number | undefined;
 
     let currentFeed = {
-		start: new Date(),
-		end: new Date(),
-	};
+        start: new Date(),
+        end: new Date(),
+    };
 
-	let isFeeding = false;
-	let isPaused = false;
+    let isFeeding = false;
+    let isPaused = false;
     let bottleSize = 0;
     let remainingMilk = 0;
-	let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
+    let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
 
     const dispatch = createEventDispatcher();
 
@@ -47,32 +48,32 @@
     }
 
     function stopFeedingTimer() {
-		clearInterval(stopwatchInterval);
-		isFeeding = false;
-		isPaused = false;
+        clearInterval(stopwatchInterval);
+        isFeeding = false;
+        isPaused = false;
 
-		if (feedDurationSeconds === 0) {
-			return;
-		}
+        if (feedDurationSeconds === 0) {
+            return;
+        }
 
-        const newFinishedFeed = {
+        const newFinishedFeed: FeedLog = {
+            feedId: new Date().getTime().toString(),
             start: currentFeed.start,
             end: currentFeed.end,
             duration: feedDurationSeconds,
             remainingMilk: remainingMilk,
             bottleSize: bottleSize,
             type: "bottle",
+        };
 
-        }
-
-        dispatch('newfeedfinished', newFinishedFeed);
+        dispatch("newfeedfinished", newFinishedFeed);
 
         currentFeed = {
-			start: new Date(),
-			end: new Date(),
-		};
-		feedDurationSeconds = 0;
-	}
+            start: new Date(),
+            end: new Date(),
+        };
+        feedDurationSeconds = 0;
+    }
 
     function togglePauseFeedingTimer() {
         if (isPaused) {
@@ -84,22 +85,22 @@
         }
     }
 
-	/**
-	 * @param {number} bottleSize
-	 */
-	function updateSavedBottleSize(bottleSize: number) {
-		localforage.setItem("bottleSize", bottleSize).catch(function (err) {
-			console.error(err);
-		});
-	}
+    /**
+     * @param {number} bottleSize
+     */
+    function updateSavedBottleSize(bottleSize: number) {
+        localforage.setItem("bottleSize", bottleSize).catch(function (err) {
+            console.error(err);
+        });
+    }
 
     onMount(() => {
         localforage
             .getItem("bottleSize")
-            .then((value) => {
-                if (typeof value !== "number") {
+            .then((value: any) => {
+                if (typeof Number.parseInt(value) !== "number") {
                     bottleSize = 0;
-                    return
+                    return;
                 }
                 bottleSize = value || 0;
             })
@@ -109,8 +110,8 @@
     });
 
     onDestroy(() => {
-		stopFeedingTimer();
-	});
+        stopFeedingTimer();
+    });
 </script>
 
 <div
@@ -118,15 +119,8 @@
 >
     <h3>Now: {currentTime}</h3>
     <div class="flex items-center space-between my-2">
-        <h3 class="text-2xl my-2">
-            This feed: {Math.floor(feedDurationSeconds / 60)
-                .toString()
-                .padStart(2, "0")}:{(feedDurationSeconds % 60)
-                .toString()
-                .padStart(2, "0")}
-        </h3>
         {#if isFeeding && !isPaused}
-            <div role="status" class="ml-4">
+            <div role="status" class="mr-4">
                 <svg
                     aria-hidden="true"
                     class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
@@ -146,6 +140,13 @@
                 <span class="sr-only">Feeding...</span>
             </div>
         {/if}
+        <h3 class="text-2xl my-2">
+            This feed: {Math.floor(feedDurationSeconds / 60)
+                .toString()
+                .padStart(2, "0")}:{(feedDurationSeconds % 60)
+                .toString()
+                .padStart(2, "0")}
+        </h3>
     </div>
     <div class="flex gap-4">
         <div>
@@ -155,7 +156,9 @@
                 >Bottle Size (ml)</label
             >
             <input
-                type="text" inputmode="numeric" pattern="[0-9]*"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
                 bind:value={bottleSize}
                 disabled={isFeeding}
                 on:input={() => updateSavedBottleSize(bottleSize)}
@@ -169,7 +172,9 @@
                 >Milk remaining (ml)</label
             >
             <input
-                type="text" inputmode="numeric" pattern="[0-9]*"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
                 bind:value={remainingMilk}
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
