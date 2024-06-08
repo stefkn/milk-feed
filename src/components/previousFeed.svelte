@@ -153,7 +153,7 @@
                 {#if feed.duration <= 60}
                     {feed.duration} seconds
                 {:else}
-                    {feed.duration / 60} minutes
+                    {(feed.duration / 60).toFixed(2)} minutes
                 {/if}
             </span>
             <span>
