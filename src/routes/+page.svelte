@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { browser } from "$app/environment";
 	import localforage from "localforage";
 	import type { FeedLog, FeedingChartInterface } from "../lib/types";
 
@@ -17,6 +18,7 @@
 	export let previousFeeds: FeedLog[] = [];
 
 	let feedingChartComponent: FeedingChartInterface;
+	let isDarkMode: Boolean = browser ? document.documentElement.classList.contains("dark") : false;
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
 		console.log("new feed finished!", event.detail);
@@ -45,6 +47,11 @@
 		feedingChartComponent.updateFeedChart(previousFeeds);
 	}
 
+	function handleToggleLightDarkMode() {
+		toggleLightDarkMode();
+		isDarkMode = !isDarkMode;
+	}
+
 	onMount(() => {
 		localforage
 			.getItem("previousFeeds")
@@ -67,17 +74,76 @@
 		class="w-auto h-full bg-blue-100 m-auto max-w-3xl p-4 rounded-lg dark:bg-slate-900"
 	>
 		<div class="flex justify-between max-w-xl m-auto">
-			<h1 class="text-3xl">🍼 MilkFeed</h1>
+			<h1 class="text-3xl">milkfeed</h1>
 			<div class="flex gap-2">
 				<button
-					on:click={toggleLightDarkMode}
+					on:click={handleToggleLightDarkMode}
 					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
-					>Toggle light/dark</button
 				>
+					{#if isDarkMode}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="feather feather-sun"
+							><circle cx="12" cy="12" r="5"></circle><line
+								x1="12"
+								y1="1"
+								x2="12"
+								y2="3"
+							></line><line x1="12" y1="21" x2="12" y2="23"
+							></line><line
+								x1="4.22"
+								y1="4.22"
+								x2="5.64"
+								y2="5.64"
+							></line><line
+								x1="18.36"
+								y1="18.36"
+								x2="19.78"
+								y2="19.78"
+							></line><line x1="1" y1="12" x2="3" y2="12"
+							></line><line x1="21" y1="12" x2="23" y2="12"
+							></line><line
+								x1="4.22"
+								y1="19.78"
+								x2="5.64"
+								y2="18.36"
+							></line><line
+								x1="18.36"
+								y1="5.64"
+								x2="19.78"
+								y2="4.22"
+							></line></svg
+						>
+					{:else}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="feather feather-moon"
+							><path
+								d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+							></path></svg
+						>
+					{/if}
+				</button>
 				<button
 					on:click={toggleNightVision}
 					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
-					>Toggle night</button
+					>night mode</button
 				>
 			</div>
 		</div>
