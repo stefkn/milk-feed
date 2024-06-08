@@ -18,6 +18,16 @@
         const newPreviousFeeds: FeedLog[] = [];
         dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
+
+    function updateFeed(event: any) {
+        const newPreviousFeeds = previousFeeds.map((f) => {
+            if (f.feedId === event.detail.feedId) {
+                return event.detail;
+            }
+            return f;
+        });
+        dispatch('updatepreviousfeeds', newPreviousFeeds);
+    }
 </script>
 
 <ul
@@ -27,7 +37,7 @@
         <p class="text-left">No previous feeds.</p>
     {:else}    
         {#each previousFeeds as feed}
-            <PreviousFeed {feed} on:deletefeed={deletePreviousFeed} />
+            <PreviousFeed {feed} on:deletefeed={deletePreviousFeed} on:updatefeed={updateFeed} />
         {/each}
     {/if}
 
