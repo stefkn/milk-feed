@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { format } from "@formkit/tempo";
+    import { format, diffSeconds } from "@formkit/tempo";
     import { createEventDispatcher } from "svelte";
     import type { FeedLog } from "../lib/types";
 
@@ -14,6 +14,34 @@
         remainingMilk: 0,
         type: "bottle",
     };
+
+    let isEditing = false;
+    let updatedFeed = { ...feed };
+    let updatedFeedDuration = diffSeconds(updatedFeed.end, updatedFeed.start);
+    let updatedFeedBoundStart = format(updatedFeed.start, "YYYY-MM-DDThh:mm", "en");
+    let updatedFeedBoundEnd = format(updatedFeed.end, "YYYY-MM-DDThh:mm", "en");
+
+    function handleFormSubmit(event: any) {
+        event.preventDefault();
+        dispatch("updatefeed", updatedFeed);
+        isEditing = false;
+    }
+
+    function handleUpdateFeedChange(event: any) {
+        const { name, value } = event.target;
+        updatedFeed = {
+            ...updatedFeed,
+            [name]: value,
+        };
+        updatedFeedDuration = diffSeconds(updatedFeed.end, updatedFeed.start);
+        if (0 > updatedFeedDuration) {
+            updatedFeedDuration = 0;
+        }
+        updatedFeed = {
+            ...updatedFeed,
+            duration: updatedFeedDuration,
+        };
+    }
 </script>
 
 <li
