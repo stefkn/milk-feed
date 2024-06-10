@@ -13,3 +13,7 @@ export type FeedLog = {
 export interface FeedingChartInterface {
     updateFeedChart: (previousFeeds: FeedLog[]) => void;
 }
+
+export interface TimelineInterface {
+    updateTimeline: (previousFeeds: FeedLog[]) => void;
+}
