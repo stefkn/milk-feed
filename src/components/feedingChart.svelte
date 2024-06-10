@@ -72,6 +72,14 @@
                         scales: {
                             y: {
                                 beginAtZero: true,
+                                grid: {
+                                    color: "gray",
+                                },
+                            },
+                            x: {
+                                grid: {
+                                    color: "gray",
+                                },
                             },
                         },
                     },
@@ -82,16 +90,16 @@
         switch (chartType) {
             case CHART_FEEDING_TIME:
                 chartGeneratorFunction("seconds", previousFeedDurations);
-                break
+                break;
             case CHART_FEEDING_SIZE:
                 chartGeneratorFunction("ml", previousFeedSizes);
-                break
+                break;
             case CHART_FEEDING_SPEED:
                 chartGeneratorFunction("ml/s", previousFeedSpeeds);
-                break
+                break;
         }
 
-        return () => {}
+        return () => {};
     }
 </script>
 
