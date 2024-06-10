@@ -38,6 +38,8 @@
 	"dependencies": {
 		"@formkit/tempo": "^0.1.1",
 		"chart.js": "^4.4.3",
+		"chartjs-adapter-date-fns": "^3.0.0",
+		"date-fns": "^3.6.0",
 		"localforage": "^1.10.0"
 	}
 }
