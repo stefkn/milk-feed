@@ -58,7 +58,7 @@
 <li
     class="block max-w-2xl m-auto p-2 my-2 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"
 >
-    <div class="flex justify-between items-center gap-2">
+    <div class="flex justify-between items-center gap-1">
         {#if isEditing}
             <form
                 class="flex flex-wrap gap-4 gap-y-0 items-center"
@@ -152,15 +152,15 @@
                 {format(feed.start, { date: "short" })}
             </span>
             <span>
-                {format(feed.start, { time: "short" })} - {format(feed.end, {
+                {format(feed.start, { time: "short" })}-{format(feed.end, {
                     time: "short",
                 })}
             </span>
             <span>
                 {#if feed.duration <= 60}
-                    {feed.duration} seconds
+                    {feed.duration}sec
                 {:else}
-                    {(feed.duration / 60).toFixed(2)} minutes
+                    {(feed.duration / 60).toFixed(1)}min
                 {/if}
             </span>
             <span>
