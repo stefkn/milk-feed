@@ -2,11 +2,12 @@
 	import { onMount } from "svelte";
 	import { browser } from "$app/environment";
 	import localforage from "localforage";
-	import type { FeedLog, FeedingChartInterface } from "../lib/types";
+	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
 	import FeedingTimer from "../components/feedingTimer.svelte";
 	import FeedingChart from "../components/feedingChart.svelte";
+	import FeedingTimeline from "../components/feedingTimeline.svelte";
 
 	import "../app.css";
 	import {
@@ -18,6 +19,7 @@
 	export let previousFeeds: FeedLog[] = [];
 
 	let feedingChartComponent: FeedingChartInterface;
+	let timelineComponent: TimelineInterface;
 	let isDarkMode: Boolean = browser ? document.documentElement.classList.contains("dark") : false;
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
@@ -32,6 +34,7 @@
 			});
 
 		feedingChartComponent.updateFeedChart(previousFeeds);
+		timelineComponent.updateTimeline(previousFeeds);
 	}
 
 	function updatePreviousFeeds(event: CustomEvent<FeedLog[]>) {
@@ -45,6 +48,7 @@
 			});
 
 		feedingChartComponent.updateFeedChart(previousFeeds);
+		timelineComponent.updateTimeline(previousFeeds);
 	}
 
 	function handleToggleLightDarkMode() {
@@ -62,6 +66,7 @@
 			})
 			.then(() => {
 				feedingChartComponent.updateFeedChart(previousFeeds);
+				timelineComponent.updateTimeline(previousFeeds);
 			});
 
 		restoreLightDarkModeFromLocalStorage();
@@ -149,6 +154,8 @@
 		</div>
 
 		<FeedingTimer on:newfeedfinished={handleNewFeedFinished} />
+
+		<FeedingTimeline {previousFeeds} bind:this={timelineComponent} />
 
 		<FeedingChart {previousFeeds} bind:this={feedingChartComponent} />
 
