@@ -35,7 +35,20 @@
 >
     {#if previousFeeds.length === 0}
         <p class="text-left">No previous feeds.</p>
-    {:else}    
+    {:else}
+        <div class="w-full dark:bg-gray-800 rounded-lg p-4">
+            <div class="flex gap-4 justify-between">
+                <p>
+                    Total feeds: {previousFeeds.length}
+                </p>
+                <p>
+                    Total milk: {previousFeeds.reduce((acc, feed) => acc + Number(feed.bottleSize), 0)}ml
+                </p>
+                <p>
+                    Total time: {previousFeeds.reduce((acc, feed) => acc + feed.duration, 0)}s
+                </p>
+            </div>
+        </div>
         {#each previousFeeds as feed}
             <PreviousFeed {feed} on:deletefeed={deletePreviousFeed} on:updatefeed={updateFeed} />
         {/each}
