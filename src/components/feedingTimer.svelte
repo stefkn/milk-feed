@@ -115,7 +115,7 @@
 </script>
 
 <div
-    class="block max-w-sm mt-2 m-auto p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"
+    class="block sticky top-4 max-w-sm mt-2 m-auto p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"
 >
     <h3>Now: {currentTime}</h3>
     <div class="flex items-center space-between my-2">
