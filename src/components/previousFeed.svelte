@@ -58,7 +58,7 @@
 <li
     class="block max-w-2xl m-auto p-2 my-2 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"
 >
-    <div class="flex justify-between items-center gap-1">
+    <div class="flex flex-wrap justify-between items-center gap-2 md:flex-nowrap">
         {#if isEditing}
             <form
                 class="flex flex-wrap gap-4 gap-y-0 items-center"
@@ -148,7 +148,7 @@
                 </button>
             </form>
         {:else}
-            <span>
+            <span class="w-full md:w-auto">
                 {format(feed.start, { date: "short" })}
             </span>
             <span>
