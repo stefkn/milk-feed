@@ -45,7 +45,12 @@
                     Total milk: {previousFeeds.reduce((acc, feed) => acc + Number(feed.bottleSize), 0)}ml
                 </p>
                 <p>
-                    Total time: {previousFeeds.reduce((acc, feed) => acc + feed.duration, 0)}s
+                    Total time: 
+                    {#if previousFeeds.reduce((acc, feed) => acc + feed.duration, 0) > 60 }
+                        {Math.floor(previousFeeds.reduce((acc, feed) => acc + feed.duration, 0) / 60)} mins
+                    {:else}
+                        {previousFeeds.reduce((acc, feed) => acc + feed.duration, 0)} secs
+                    {/if}
                 </p>
             </div>
         </div>
