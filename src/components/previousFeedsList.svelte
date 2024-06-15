@@ -42,7 +42,7 @@
                     Total feeds: {previousFeeds.length}
                 </p>
                 <p>
-                    Total milk: {previousFeeds.reduce((acc, feed) => acc + Number(feed.bottleSize), 0)}ml
+                    Total milk: {previousFeeds.reduce((acc, feed) => acc + Number(feed.remainingMilk ? feed.bottleSize - feed.remainingMilk : feed.bottleSize), 0)}ml
                 </p>
                 <p>
                     Total time: 
