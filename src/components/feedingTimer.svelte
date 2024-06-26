@@ -126,7 +126,7 @@
 >
     <div>
         <button class="bg-cyan-600 p-2 mb-2 rounded-lg float-right" on:click={toggleSticky}>
-            {isSticky ? "unpin from top" : "pin to top"}
+            {isSticky ? "un-pin" : "pin to top"}
         </button>
     </div>
     <h3>Now: {currentTime}</h3>
