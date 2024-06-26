@@ -19,11 +19,16 @@
         end: new Date(),
     };
 
+    let isSticky = true;
     let isFeeding = false;
     let isPaused = false;
     let bottleSize = 0;
     let remainingMilk = 0;
     let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
+
+    function toggleSticky() {
+        isSticky = !isSticky;
+    }
 
     const dispatch = createEventDispatcher();
 
@@ -115,8 +120,15 @@
 </script>
 
 <div
-    class="block sticky top-4 max-w-sm mt-2 m-auto p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"
+    class={`block top-4 max-w-sm mt-2 m-auto p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 ${
+        isSticky ? "sticky" : ""
+    }`}
 >
+    <div>
+        <button class="bg-cyan-600 p-2 mb-2 rounded-lg float-right" on:click={toggleSticky}>
+            {isSticky ? "unpin from top" : "pin to top"}
+        </button>
+    </div>
     <h3>Now: {currentTime}</h3>
     <div class="flex items-center space-between my-2">
         {#if isFeeding && !isPaused}
