@@ -112,7 +112,7 @@
     });
 
     onDestroy(() => {
-        stopFeedingTimer();
+        clearInterval(stopwatchInterval);
     });
 </script>
 

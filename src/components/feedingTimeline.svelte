@@ -106,7 +106,6 @@
                             title: () => "",
                             label: (item) => {
                                 const data = item.dataset.data[item.dataIndex] as ChartInterface
-                                console.log(data);
                                 if (!data) {
                                     return "";
                                 }

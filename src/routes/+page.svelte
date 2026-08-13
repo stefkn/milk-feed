@@ -23,8 +23,6 @@
 	let isDarkMode: Boolean = browser ? document.documentElement.classList.contains("dark") : false;
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
-		console.log("new feed finished!", event.detail);
-
 		previousFeeds = [...previousFeeds, event.detail];
 
 		localforage
@@ -38,7 +36,6 @@
 	}
 
 	function updatePreviousFeeds(event: CustomEvent<FeedLog[]>) {
-		console.log("updating previous feeds", event);
 		previousFeeds = event.detail;
 
 		localforage
