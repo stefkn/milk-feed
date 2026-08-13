@@ -22,6 +22,12 @@ export function formatDuration(seconds: number): string {
   return `${(seconds / 60).toFixed(1)}min`;
 }
 
+export function sortFeedsByStart(feeds: FeedLog[]): FeedLog[] {
+  return [...feeds].sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+  );
+}
+
 export function applyFeedEdit(
   feed: FeedLog,
   field: string,
