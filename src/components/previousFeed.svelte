@@ -2,6 +2,7 @@
     import { format, diffSeconds, parse } from "@formkit/tempo";
     import { createEventDispatcher } from "svelte";
     import type { FeedLog } from "../lib/types";
+    import { milkConsumed, formatDuration } from "../lib/feed";
 
     const dispatch = createEventDispatcher();
 
@@ -158,18 +159,10 @@
                 })}
             </span>
             <span>
-                {#if feed.duration <= 60}
-                    {feed.duration}sec
-                {:else}
-                    {(feed.duration / 60).toFixed(1)}min
-                {/if}
+                {formatDuration(feed.duration)}
             </span>
             <span>
-                {#if feed.remainingMilk === 0}
-                    {feed.bottleSize}
-                {:else}
-                    {feed.bottleSize - feed.remainingMilk}
-                {/if}
+                {milkConsumed(feed)}
                 ml
             </span>
         {/if}
