@@ -41,7 +41,10 @@
         } else {
             updatedFeed = {
                 ...updatedFeed,
-                [name]: value,
+                [name]:
+                    name === "bottleSize" || name === "remainingMilk"
+                        ? Number(value)
+                        : value,
             };
         }
         updatedFeedDuration = diffSeconds(updatedFeed.end, updatedFeed.start);
@@ -115,9 +118,8 @@
                         >Bottle Size (ml)</label
                     >
                     <input
-                        type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
+                        type="number"
+                        min="0"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-24"
                         bind:value={updatedFeed.bottleSize}
                         on:change={handleUpdateFeedChange}
@@ -131,9 +133,8 @@
                         >Remaining Milk (ml)</label
                     >
                     <input
-                        type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
+                        type="number"
+                        min="0"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
                         bind:value={updatedFeed.remainingMilk}
                         on:change={handleUpdateFeedChange}
