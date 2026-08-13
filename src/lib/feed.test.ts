@@ -9,6 +9,9 @@ import {
   feedElapsedMs,
   feedElapsedSeconds,
   generateFeedId,
+  feedsOnDate,
+  timeSinceLastFeed,
+  formatTimeSince,
 } from "./feed";
 import type { FeedLog } from "./types";
 
@@ -187,5 +190,65 @@ describe("feedElapsedSeconds", () => {
 
   it("subtracts paused time before converting", () => {
     expect(feedElapsedSeconds(10000, 0, 2000)).toBe(8);
+  });
+});
+
+describe("feedsOnDate", () => {
+  const date = new Date(2024, 0, 15);
+
+  it("returns feeds that started on the given date", () => {
+    const feeds = [
+      makeFeed({ feedId: "a", start: new Date(2024, 0, 15, 9, 0) }),
+      makeFeed({ feedId: "b", start: new Date(2024, 0, 15, 12, 0) }),
+    ];
+    expect(feedsOnDate(feeds, date).map((f) => f.feedId)).toEqual(["a", "b"]);
+  });
+
+  it("excludes feeds from other days", () => {
+    const feeds = [
+      makeFeed({ feedId: "a", start: new Date(2024, 0, 15, 9, 0) }),
+      makeFeed({ feedId: "b", start: new Date(2024, 0, 14, 23, 59) }),
+      makeFeed({ feedId: "c", start: new Date(2024, 0, 16, 0, 0) }),
+    ];
+    expect(feedsOnDate(feeds, date).map((f) => f.feedId)).toEqual(["a"]);
+  });
+});
+
+describe("timeSinceLastFeed", () => {
+  const now = new Date("2024-01-01T12:00:00").getTime();
+
+  it("returns seconds since the most recent feed ended", () => {
+    const feeds = [
+      makeFeed({ feedId: "a", end: new Date("2024-01-01T11:00:00") }),
+      makeFeed({ feedId: "b", end: new Date("2024-01-01T11:30:00") }),
+    ];
+    expect(timeSinceLastFeed(feeds, now)).toBe(30 * 60);
+  });
+
+  it("returns undefined for an empty list", () => {
+    expect(timeSinceLastFeed([], now)).toBeUndefined();
+  });
+
+  it("clamps to zero when the last feed is in the future", () => {
+    const feeds = [makeFeed({ end: new Date("2024-01-01T13:00:00") })];
+    expect(timeSinceLastFeed(feeds, now)).toBe(0);
+  });
+});
+
+describe("formatTimeSince", () => {
+  it("shows just now under a minute", () => {
+    expect(formatTimeSince(30)).toBe("just now");
+  });
+
+  it("shows minutes under an hour", () => {
+    expect(formatTimeSince(45 * 60)).toBe("45m ago");
+  });
+
+  it("shows whole hours", () => {
+    expect(formatTimeSince(2 * 60 * 60)).toBe("2h ago");
+  });
+
+  it("shows hours and minutes", () => {
+    expect(formatTimeSince(2 * 60 * 60 + 14 * 60)).toBe("2h 14m ago");
   });
 });

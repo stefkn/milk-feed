@@ -35,6 +35,46 @@ export function sortFeedsByStart(feeds: FeedLog[]): FeedLog[] {
   );
 }
 
+export function feedsOnDate(feeds: FeedLog[], date: Date): FeedLog[] {
+  return feeds.filter((feed) => {
+    const start = new Date(feed.start);
+    return (
+      start.getFullYear() === date.getFullYear() &&
+      start.getMonth() === date.getMonth() &&
+      start.getDate() === date.getDate()
+    );
+  });
+}
+
+export function timeSinceLastFeed(
+  feeds: FeedLog[],
+  nowMs: number = Date.now(),
+): number | undefined {
+  if (feeds.length === 0) {
+    return undefined;
+  }
+  const latestEnd = Math.max(
+    ...feeds.map((feed) => new Date(feed.end).getTime()),
+  );
+  return Math.max(0, Math.floor((nowMs - latestEnd) / 1000));
+}
+
+export function formatTimeSince(seconds: number): string {
+  if (seconds < 60) {
+    return "just now";
+  }
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (remainingMinutes === 0) {
+    return `${hours}h ago`;
+  }
+  return `${hours}h ${remainingMinutes}m ago`;
+}
+
 export function applyFeedEdit(
   feed: FeedLog,
   field: string,

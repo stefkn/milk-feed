@@ -2,13 +2,16 @@
     import PreviousFeed from "./previousFeed.svelte";
     import { createEventDispatcher } from 'svelte';
     import type { FeedLog } from '../lib/types';
-    import { totalMilk, totalDuration } from "../lib/feed";
+    import { totalMilk, totalDuration, feedsOnDate, timeSinceLastFeed, formatTimeSince } from "../lib/feed";
 
     import "../app.css";
     
 	const dispatch = createEventDispatcher();
 
     export let previousFeeds: FeedLog[] = [];
+
+    $: todayFeeds = feedsOnDate(previousFeeds, new Date());
+    $: sinceLastFeed = timeSinceLastFeed(previousFeeds);
 
     function deletePreviousFeed(event: any) {
         const newPreviousFeeds = previousFeeds.filter((f) => f.feedId !== event.detail.feedId);
@@ -55,6 +58,19 @@
                     {:else}
                         {totalDuration(previousFeeds)} secs
                     {/if}
+                </p>
+            </div>
+            <div class="flex gap-4 justify-between mt-2 pt-2 border-t border-gray-300 dark:border-gray-700">
+                <p>
+                    Today: {todayFeeds.length} feed{todayFeeds.length === 1 ? "" : "s"}
+                </p>
+                <p>
+                    Today's milk: {totalMilk(todayFeeds)}ml
+                </p>
+                <p>
+                    Last feed: {sinceLastFeed === undefined
+                        ? "—"
+                        : formatTimeSince(sinceLastFeed)}
                 </p>
             </div>
         </div>
