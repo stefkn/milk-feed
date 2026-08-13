@@ -91,8 +91,6 @@
             type: "bottle",
         };
 
-        dispatch("newfeedfinished", newFinishedFeed);
-
         feedStartTime = Date.now();
         pausedDurationMs = 0;
         pauseStartedAt = undefined;
@@ -101,6 +99,8 @@
             end: new Date(),
         };
         feedDurationSeconds = 0;
+
+        dispatch("newfeedfinished", newFinishedFeed);
     }
 
     function togglePauseFeedingTimer() {
