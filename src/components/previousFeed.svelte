@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { format, diffSeconds, parse } from "@formkit/tempo";
+    import { format } from "@formkit/tempo";
     import { createEventDispatcher } from "svelte";
     import type { FeedLog } from "../lib/types";
-    import { milkConsumed, formatDuration } from "../lib/feed";
+    import { milkConsumed, formatDuration, applyFeedEdit } from "../lib/feed";
 
     const dispatch = createEventDispatcher();
 
@@ -18,7 +18,7 @@
 
     let isEditing = false;
     let updatedFeed = { ...feed };
-    let updatedFeedDuration = diffSeconds(updatedFeed.end, updatedFeed.start);
+    let updatedFeedDuration = feed.duration;
     let updatedFeedBoundStart = format(
         updatedFeed.start,
         "YYYY-MM-DDTHH:mm",
@@ -34,28 +34,8 @@
 
     function handleUpdateFeedChange(event: any) {
         const { name, value } = event.target;
-        if (["start", "end"].includes(name)) {
-            updatedFeed = {
-                ...updatedFeed,
-                [name]: parse(value, "YYYY-MM-DDTHH:mm", "en"),
-            };
-        } else {
-            updatedFeed = {
-                ...updatedFeed,
-                [name]:
-                    name === "bottleSize" || name === "remainingMilk"
-                        ? Number(value)
-                        : value,
-            };
-        }
-        updatedFeedDuration = diffSeconds(updatedFeed.end, updatedFeed.start);
-        if (0 > updatedFeedDuration) {
-            updatedFeedDuration = 0;
-        }
-        updatedFeed = {
-            ...updatedFeed,
-            duration: updatedFeedDuration,
-        };
+        updatedFeed = applyFeedEdit(updatedFeed, name, value);
+        updatedFeedDuration = updatedFeed.duration;
     }
 </script>
 
@@ -120,6 +100,7 @@
                     >
                     <input
                         type="number"
+                        name="bottleSize"
                         min="0"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-24"
                         bind:value={updatedFeed.bottleSize}
@@ -135,6 +116,7 @@
                     >
                     <input
                         type="number"
+                        name="remainingMilk"
                         min="0"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
                         bind:value={updatedFeed.remainingMilk}

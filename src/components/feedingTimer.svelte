@@ -1,8 +1,9 @@
 <script lang="ts">
     import { onMount, onDestroy, createEventDispatcher } from "svelte";
     import localforage from "localforage";
-    import { format, addSecond, diffSeconds } from "@formkit/tempo";
+    import { format } from "@formkit/tempo";
     import type { FeedLog } from "$lib/types";
+    import { feedElapsedMs, feedElapsedSeconds } from "$lib/feed";
 
     let currentTime = format(new Date(), {
         date: "short",
@@ -14,6 +15,10 @@
      */
     let stopwatchInterval: number | undefined;
 
+    let feedStartTime = Date.now();
+    let pausedDurationMs = 0;
+    let pauseStartedAt: number | undefined;
+
     let currentFeed = {
         start: new Date(),
         end: new Date(),
@@ -24,7 +29,7 @@
     let isPaused = false;
     let bottleSize = 0;
     let remainingMilk = 0;
-    let feedDurationSeconds = diffSeconds(currentFeed.end, currentFeed.start);
+    let feedDurationSeconds = 0;
 
     function toggleSticky() {
         isSticky = !isSticky;
@@ -32,23 +37,32 @@
 
     const dispatch = createEventDispatcher();
 
+    function updateFeedDuration() {
+        const nowMs = Date.now();
+        const elapsedMs = feedElapsedMs(nowMs, feedStartTime, pausedDurationMs);
+        feedDurationSeconds = feedElapsedSeconds(
+            nowMs,
+            feedStartTime,
+            pausedDurationMs,
+        );
+        currentFeed.end = new Date(feedStartTime + elapsedMs);
+    }
+
     function _setStopWatchInterval() {
-        stopwatchInterval = setInterval(() => {
-            currentFeed.end = addSecond(currentFeed.end);
-            feedDurationSeconds = diffSeconds(
-                currentFeed.end,
-                currentFeed.start,
-            );
-        }, 1000);
+        stopwatchInterval = setInterval(updateFeedDuration, 1000);
     }
 
     function startFeedingTimer() {
         isFeeding = true;
         isPaused = false;
+        feedStartTime = Date.now();
+        pausedDurationMs = 0;
+        pauseStartedAt = undefined;
         currentFeed = {
-            start: new Date(),
-            end: new Date(),
+            start: new Date(feedStartTime),
+            end: new Date(feedStartTime),
         };
+        feedDurationSeconds = 0;
         _setStopWatchInterval();
     }
 
@@ -56,6 +70,8 @@
         clearInterval(stopwatchInterval);
         isFeeding = false;
         isPaused = false;
+
+        updateFeedDuration();
 
         if (feedDurationSeconds === 0) {
             return;
@@ -73,6 +89,9 @@
 
         dispatch("newfeedfinished", newFinishedFeed);
 
+        feedStartTime = Date.now();
+        pausedDurationMs = 0;
+        pauseStartedAt = undefined;
         currentFeed = {
             start: new Date(),
             end: new Date(),
@@ -83,10 +102,16 @@
     function togglePauseFeedingTimer() {
         if (isPaused) {
             isPaused = false;
+            if (pauseStartedAt !== undefined) {
+                pausedDurationMs += Date.now() - pauseStartedAt;
+            }
+            pauseStartedAt = undefined;
             _setStopWatchInterval();
         } else {
             isPaused = true;
             clearInterval(stopwatchInterval);
+            pauseStartedAt = Date.now();
+            updateFeedDuration();
         }
     }
 
