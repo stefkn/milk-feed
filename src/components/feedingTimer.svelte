@@ -14,6 +14,7 @@
      * @type {number | undefined}
      */
     let stopwatchInterval: number | undefined;
+    let clockInterval: number | undefined;
 
     let feedStartTime = Date.now();
     let pausedDurationMs = 0;
@@ -46,6 +47,13 @@
             pausedDurationMs,
         );
         currentFeed.end = new Date(feedStartTime + elapsedMs);
+    }
+
+    function updateCurrentTime() {
+        currentTime = format(new Date(), {
+            date: "short",
+            time: "short",
+        });
     }
 
     function _setStopWatchInterval() {
@@ -129,6 +137,9 @@
     }
 
     onMount(() => {
+        updateCurrentTime();
+        clockInterval = setInterval(updateCurrentTime, 1000);
+
         localforage
             .getItem("bottleSize")
             .then((value: any) => {
@@ -142,6 +153,7 @@
 
     onDestroy(() => {
         clearInterval(stopwatchInterval);
+        clearInterval(clockInterval);
     });
 </script>
 
