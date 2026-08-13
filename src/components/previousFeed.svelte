@@ -151,8 +151,11 @@
                 {formatDuration(feed.duration)}
             </span>
             <span>
-                {milkConsumed(feed)}
-                ml
+                {#if feed.type === "breast"}
+                    Breast
+                {:else}
+                    {milkConsumed(feed)} ml
+                {/if}
             </span>
         {/if}
         <div class="flex gap-2">

@@ -30,6 +30,7 @@
     let isPaused = false;
     let bottleSize = 0;
     let remainingMilk = 0;
+    let feedType = "bottle";
     let feedDurationSeconds = 0;
 
     function toggleSticky() {
@@ -94,9 +95,9 @@
             start: currentFeed.start,
             end: currentFeed.end,
             duration: feedDurationSeconds,
-            remainingMilk: remainingMilk,
-            bottleSize: bottleSize,
-            type: "bottle",
+            remainingMilk: feedType === "breast" ? 0 : remainingMilk,
+            bottleSize: feedType === "breast" ? 0 : bottleSize,
+            type: feedType,
         };
 
         feedStartTime = Date.now();
@@ -198,37 +199,61 @@
                 .padStart(2, "0")}
         </h3>
     </div>
-    <div class="flex gap-4">
-        <div class="flex-1">
-            <label
-                for="bottleSize"
-                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Bottle Size (ml)</label
-            >
-            <input
-                type="number"
-                min="0"
-                bind:value={bottleSize}
-                disabled={isFeeding}
-                on:input={() => updateSavedBottleSize(bottleSize)}
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            />
-        </div>
-        <div class="flex-1">
-            <label
-                for="remainingMilk"
-                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Milk remaining (ml)</label
-            >
-            <input
-                type="number"
-                min="0"
-                max={bottleSize}
-                bind:value={remainingMilk}
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            />
-        </div>
+    <div class="flex gap-2 my-2">
+        <button
+            type="button"
+            disabled={isFeeding}
+            on:click={() => (feedType = "bottle")}
+            class="px-4 py-2 rounded-full text-sm font-medium disabled:opacity-50 {feedType ===
+            'bottle'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}"
+            >Bottle</button
+        >
+        <button
+            type="button"
+            disabled={isFeeding}
+            on:click={() => (feedType = "breast")}
+            class="px-4 py-2 rounded-full text-sm font-medium disabled:opacity-50 {feedType ===
+            'breast'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}"
+            >Breast</button
+        >
     </div>
+    {#if feedType === "bottle"}
+        <div class="flex gap-4">
+            <div class="flex-1">
+                <label
+                    for="bottleSize"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >Bottle Size (ml)</label
+                >
+                <input
+                    type="number"
+                    min="0"
+                    bind:value={bottleSize}
+                    disabled={isFeeding}
+                    on:input={() => updateSavedBottleSize(bottleSize)}
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                />
+            </div>
+            <div class="flex-1">
+                <label
+                    for="remainingMilk"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >Milk remaining (ml)</label
+                >
+                <input
+                    type="number"
+                    min="0"
+                    max={bottleSize}
+                    bind:value={remainingMilk}
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                />
+            </div>
+        </div>
+    {/if}
     <div class="flex justify-center gap-4">
         {#if !isFeeding}
             <button
