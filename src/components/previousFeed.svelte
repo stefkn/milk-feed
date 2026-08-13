@@ -2,6 +2,7 @@
     import { format, diffSeconds, parse } from "@formkit/tempo";
     import { createEventDispatcher } from "svelte";
     import type { FeedLog } from "../lib/types";
+    import { milkConsumed, formatDuration } from "../lib/feed";
 
     const dispatch = createEventDispatcher();
 
@@ -33,7 +34,7 @@
 
     function handleUpdateFeedChange(event: any) {
         const { name, value } = event.target;
-        if (name in ["start", "end"]) {
+        if (["start", "end"].includes(name)) {
             updatedFeed = {
                 ...updatedFeed,
                 [name]: parse(value, "YYYY-MM-DDTHH:mm", "en"),
@@ -41,7 +42,10 @@
         } else {
             updatedFeed = {
                 ...updatedFeed,
-                [name]: value,
+                [name]:
+                    name === "bottleSize" || name === "remainingMilk"
+                        ? Number(value)
+                        : value,
             };
         }
         updatedFeedDuration = diffSeconds(updatedFeed.end, updatedFeed.start);
@@ -115,9 +119,8 @@
                         >Bottle Size (ml)</label
                     >
                     <input
-                        type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
+                        type="number"
+                        min="0"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-24"
                         bind:value={updatedFeed.bottleSize}
                         on:change={handleUpdateFeedChange}
@@ -131,9 +134,8 @@
                         >Remaining Milk (ml)</label
                     >
                     <input
-                        type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
+                        type="number"
+                        min="0"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
                         bind:value={updatedFeed.remainingMilk}
                         on:change={handleUpdateFeedChange}
@@ -157,18 +159,10 @@
                 })}
             </span>
             <span>
-                {#if feed.duration <= 60}
-                    {feed.duration}sec
-                {:else}
-                    {(feed.duration / 60).toFixed(1)}min
-                {/if}
+                {formatDuration(feed.duration)}
             </span>
             <span>
-                {#if feed.remainingMilk === 0}
-                    {feed.bottleSize}
-                {:else}
-                    {feed.bottleSize - feed.remainingMilk}
-                {/if}
+                {milkConsumed(feed)}
                 ml
             </span>
         {/if}

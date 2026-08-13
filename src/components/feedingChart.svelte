@@ -3,6 +3,7 @@
     import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
     import Chart from "chart.js/auto";
+    import { milkConsumed } from "../lib/feed";
 
     const CHART_FEEDING_TIME = "feeding_time";
     const CHART_FEEDING_SIZE = "bottle_size";
@@ -41,11 +42,7 @@
             if (feed.duration === 0) {
                 return 0;
             }
-            if (feed.remainingMilk === 0) {
-                return feed.bottleSize / feed.duration;
-            } else {
-                return (feed.bottleSize - feed.remainingMilk) / feed.duration;
-            }
+            return milkConsumed(feed) / feed.duration;
         });
 
         const chartGeneratorFunction = (
@@ -120,7 +117,7 @@
             >
             <select
                 bind:value={chartType}
-                on:change={updateFeedChart(previousFeeds)}
+                on:change={() => updateFeedChart(previousFeeds)}
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             >
                 <option value={CHART_FEEDING_TIME}>feeding time</option>

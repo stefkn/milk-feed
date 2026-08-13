@@ -2,6 +2,7 @@
     import PreviousFeed from "./previousFeed.svelte";
     import { createEventDispatcher } from 'svelte';
     import type { FeedLog } from '../lib/types';
+    import { totalMilk, totalDuration } from "../lib/feed";
 
     import "../app.css";
     
@@ -42,14 +43,14 @@
                     Total feeds: {previousFeeds.length}
                 </p>
                 <p>
-                    Total milk: {previousFeeds.reduce((acc, feed) => acc + Number(feed.remainingMilk ? feed.bottleSize - feed.remainingMilk : feed.bottleSize), 0)}ml
+                    Total milk: {totalMilk(previousFeeds)}ml
                 </p>
                 <p>
                     Total time: 
-                    {#if previousFeeds.reduce((acc, feed) => acc + feed.duration, 0) > 60 }
-                        {Math.floor(previousFeeds.reduce((acc, feed) => acc + feed.duration, 0) / 60)} mins
+                    {#if totalDuration(previousFeeds) > 60 }
+                        {Math.floor(totalDuration(previousFeeds) / 60)} mins
                     {:else}
-                        {previousFeeds.reduce((acc, feed) => acc + feed.duration, 0)} secs
+                        {totalDuration(previousFeeds)} secs
                     {/if}
                 </p>
             </div>

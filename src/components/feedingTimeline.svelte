@@ -4,6 +4,7 @@
     import { format, parse } from "@formkit/tempo";
     import { Chart } from "chart.js/auto";
     import "chartjs-adapter-date-fns";
+    import { milkConsumed } from "../lib/feed";
 
     export let previousFeeds: FeedLog[] = [];
     let feedTimeline: Chart | undefined = undefined;
@@ -47,10 +48,7 @@
                             return {
                                 x: [feed.start, feed.end],
                                 y: 0,
-                                fedMilk:
-                                    feed.remainingMilk === 0
-                                        ? feed.bottleSize
-                                        : feed.bottleSize - feed.remainingMilk,
+                                fedMilk: milkConsumed(feed),
                                 start: format(feed.start, "HH:mm"),
                                 end: format(feed.end, "HH:mm"),
                             }
@@ -106,7 +104,6 @@
                             title: () => "",
                             label: (item) => {
                                 const data = item.dataset.data[item.dataIndex] as ChartInterface
-                                console.log(data);
                                 if (!data) {
                                     return "";
                                 }
