@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { milkConsumed, totalMilk, totalDuration, formatDuration } from "./feed";
+import {
+  milkConsumed,
+  totalMilk,
+  totalDuration,
+  formatDuration,
+  sortFeedsByStart,
+} from "./feed";
 import type { FeedLog } from "./types";
 
 function makeFeed(overrides: Partial<FeedLog> = {}): FeedLog {
@@ -76,5 +82,29 @@ describe("formatDuration", () => {
 
   it("shows minutes when over a minute", () => {
     expect(formatDuration(90)).toBe("1.5min");
+  });
+});
+
+describe("sortFeedsByStart", () => {
+  it("orders feeds chronologically by start time", () => {
+    const feeds = [
+      makeFeed({ feedId: "a", start: new Date("2024-01-01T12:00:00") }),
+      makeFeed({ feedId: "b", start: new Date("2024-01-01T09:00:00") }),
+      makeFeed({ feedId: "c", start: new Date("2024-01-01T10:00:00") }),
+    ];
+    expect(sortFeedsByStart(feeds).map((f) => f.feedId)).toEqual([
+      "b",
+      "c",
+      "a",
+    ]);
+  });
+
+  it("does not mutate the input array", () => {
+    const feeds = [
+      makeFeed({ feedId: "b", start: new Date("2024-01-01T09:00:00") }),
+      makeFeed({ feedId: "a", start: new Date("2024-01-01T12:00:00") }),
+    ];
+    sortFeedsByStart(feeds);
+    expect(feeds.map((f) => f.feedId)).toEqual(["b", "a"]);
   });
 });

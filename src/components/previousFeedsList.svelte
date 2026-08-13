@@ -11,11 +11,14 @@
     export let previousFeeds: FeedLog[] = [];
 
     function deletePreviousFeed(event: any) {
-        const newPreviousFeeds = previousFeeds.filter((f) => f !== event.detail);
+        const newPreviousFeeds = previousFeeds.filter((f) => f.feedId !== event.detail.feedId);
         dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
 
     function deleteFeedHistory() {
+        if (!window.confirm("Delete all previous feeds? This cannot be undone.")) {
+            return;
+        }
         const newPreviousFeeds: FeedLog[] = [];
         dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
