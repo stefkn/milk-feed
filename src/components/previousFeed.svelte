@@ -33,7 +33,7 @@
 
     function handleUpdateFeedChange(event: any) {
         const { name, value } = event.target;
-        if (name in ["start", "end"]) {
+        if (["start", "end"].includes(name)) {
             updatedFeed = {
                 ...updatedFeed,
                 [name]: parse(value, "YYYY-MM-DDTHH:mm", "en"),
