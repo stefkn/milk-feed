@@ -3,6 +3,7 @@
 	import { browser } from "$app/environment";
 	import localforage from "localforage";
 	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
+	import { feedsToCsv, csvToFeeds, mergeFeedsById } from "../lib/csv";
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
 	import FeedingTimer from "../components/feedingTimer.svelte";
@@ -20,7 +21,47 @@
 
 	let feedingChartComponent: FeedingChartInterface;
 	let timelineComponent: TimelineInterface;
+	let fileInput: HTMLInputElement;
 	let isDarkMode: Boolean = browser ? document.documentElement.classList.contains("dark") : false;
+
+	function persistFeeds() {
+		localforage
+			.setItem("previousFeeds", previousFeeds)
+			.catch(function (err) {
+				console.error(err);
+			});
+	}
+
+	function handleExportCsv() {
+		if (!browser) {
+			return;
+		}
+
+		const blob = new Blob([feedsToCsv(previousFeeds)], {
+			type: "text/csv;charset=utf-8;",
+		});
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = "milk-feed.csv";
+		link.click();
+		URL.revokeObjectURL(url);
+	}
+
+	async function handleImportCsv(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+
+		if (!file) {
+			return;
+		}
+
+		previousFeeds = mergeFeedsById(previousFeeds, csvToFeeds(await file.text()));
+		persistFeeds();
+		feedingChartComponent.updateFeedChart(previousFeeds);
+		timelineComponent.updateTimeline(previousFeeds);
+		input.value = "";
+	}
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
 		previousFeeds = [...previousFeeds, event.detail];
@@ -78,6 +119,23 @@
 		<div class="flex justify-between max-w-xl m-auto">
 			<h1 class="text-3xl">milkfeed</h1>
 			<div class="flex gap-2">
+				<button
+					on:click={handleExportCsv}
+					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
+					>export csv</button
+				>
+				<button
+					on:click={() => fileInput.click()}
+					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
+					>import csv</button
+				>
+				<input
+					type="file"
+					accept=".csv,text/csv"
+					class="hidden"
+					bind:this={fileInput}
+					on:change={handleImportCsv}
+				/>
 				<button
 					on:click={handleToggleLightDarkMode}
 					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
