@@ -26,6 +26,11 @@ export function toggleNightVision() {
 }
 
 export function restoreLightDarkModeFromLocalStorage() {
+    if (localStorage.theme === "nv") {
+        document.documentElement.classList.add("dark");
+        document.documentElement.classList.add("nv");
+        return;
+    }
     if (
         localStorage.theme === "dark" ||
         (!("theme" in localStorage) &&
