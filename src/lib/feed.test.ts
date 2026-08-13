@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { milkConsumed, totalMilk, totalDuration, formatDuration } from "./feed";
+import {
+  milkConsumed,
+  totalMilk,
+  totalDuration,
+  formatDuration,
+  sortFeedsByStart,
+  applyFeedEdit,
+  feedElapsedMs,
+  feedElapsedSeconds,
+} from "./feed";
 import type { FeedLog } from "./types";
 
 function makeFeed(overrides: Partial<FeedLog> = {}): FeedLog {
@@ -76,5 +85,90 @@ describe("formatDuration", () => {
 
   it("shows minutes when over a minute", () => {
     expect(formatDuration(90)).toBe("1.5min");
+  });
+});
+
+describe("sortFeedsByStart", () => {
+  it("orders feeds chronologically by start time", () => {
+    const feeds = [
+      makeFeed({ feedId: "a", start: new Date("2024-01-01T12:00:00") }),
+      makeFeed({ feedId: "b", start: new Date("2024-01-01T09:00:00") }),
+      makeFeed({ feedId: "c", start: new Date("2024-01-01T10:00:00") }),
+    ];
+    expect(sortFeedsByStart(feeds).map((f) => f.feedId)).toEqual([
+      "b",
+      "c",
+      "a",
+    ]);
+  });
+
+  it("does not mutate the input array", () => {
+    const feeds = [
+      makeFeed({ feedId: "b", start: new Date("2024-01-01T09:00:00") }),
+      makeFeed({ feedId: "a", start: new Date("2024-01-01T12:00:00") }),
+    ];
+    sortFeedsByStart(feeds);
+    expect(feeds.map((f) => f.feedId)).toEqual(["b", "a"]);
+  });
+});
+
+describe("applyFeedEdit", () => {
+  const base = () =>
+    makeFeed({
+      start: new Date("2024-01-01T00:00:00"),
+      end: new Date("2024-01-01T00:05:00"),
+      duration: 300,
+    });
+
+  it("updates bottleSize as a number", () => {
+    const feed = applyFeedEdit(base(), "bottleSize", "120");
+    expect(feed.bottleSize).toBe(120);
+  });
+
+  it("updates remainingMilk as a number", () => {
+    const feed = applyFeedEdit(base(), "remainingMilk", "30");
+    expect(feed.remainingMilk).toBe(30);
+  });
+
+  it("recomputes duration when start is edited", () => {
+    const feed = applyFeedEdit(base(), "start", "2024-01-01T00:03:00");
+    expect(feed.duration).toBe(120);
+  });
+
+  it("clamps duration to zero when end is before start", () => {
+    const feed = applyFeedEdit(base(), "start", "2024-01-01T00:10:00");
+    expect(feed.duration).toBe(0);
+  });
+
+  it("leaves unknown fields unchanged", () => {
+    expect(applyFeedEdit(base(), "unknown", "x")).toEqual(base());
+  });
+});
+
+describe("feedElapsedMs", () => {
+  it("returns elapsed milliseconds between now and start", () => {
+    expect(feedElapsedMs(5000, 0, 0)).toBe(5000);
+  });
+
+  it("subtracts paused time", () => {
+    expect(feedElapsedMs(10000, 0, 3000)).toBe(7000);
+  });
+
+  it("clamps negative values to zero", () => {
+    expect(feedElapsedMs(2000, 5000, 0)).toBe(0);
+  });
+});
+
+describe("feedElapsedSeconds", () => {
+  it("converts elapsed milliseconds to whole seconds", () => {
+    expect(feedElapsedSeconds(5000, 0, 0)).toBe(5);
+  });
+
+  it("floors partial seconds", () => {
+    expect(feedElapsedSeconds(5500, 0, 0)).toBe(5);
+  });
+
+  it("subtracts paused time before converting", () => {
+    expect(feedElapsedSeconds(10000, 0, 2000)).toBe(8);
   });
 });

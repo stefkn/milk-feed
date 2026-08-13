@@ -4,6 +4,7 @@
 	import localforage from "localforage";
 	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
 	import { feedsToCsv, csvToFeeds, mergeFeedsById } from "../lib/csv";
+	import { sortFeedsByStart } from "../lib/feed";
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
 	import FeedingTimer from "../components/feedingTimer.svelte";
@@ -61,7 +62,9 @@
 			return;
 		}
 
-		previousFeeds = mergeFeedsById(previousFeeds, csvToFeeds(await file.text()));
+		previousFeeds = sortFeedsByStart(
+			mergeFeedsById(previousFeeds, csvToFeeds(await file.text())),
+		);
 		persistFeeds();
 		feedingChartComponent.updateFeedChart(previousFeeds);
 		timelineComponent.updateTimeline(previousFeeds);
@@ -69,7 +72,7 @@
 	}
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
-		previousFeeds = [...previousFeeds, event.detail];
+		previousFeeds = sortFeedsByStart([...previousFeeds, event.detail]);
 
 		localforage
 			.setItem("previousFeeds", previousFeeds)
@@ -82,7 +85,7 @@
 	}
 
 	function updatePreviousFeeds(event: CustomEvent<FeedLog[]>) {
-		previousFeeds = event.detail;
+		previousFeeds = sortFeedsByStart(event.detail);
 
 		localforage
 			.setItem("previousFeeds", previousFeeds)
@@ -104,7 +107,9 @@
 			.getItem("previousFeeds")
 			.then((value) => {
 				if (value instanceof Array) {
-					previousFeeds = value.filter((feed) => feed.duration > 0);
+					previousFeeds = sortFeedsByStart(
+						value.filter((feed) => feed.duration > 0),
+					);
 				}
 			})
 			.then(() => {
