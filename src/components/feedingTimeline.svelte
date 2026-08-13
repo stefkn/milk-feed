@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tick } from "svelte";
     import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
     import { format, parse } from "@formkit/tempo";
@@ -17,7 +18,7 @@
         end: string;
     }
 
-    export function updateTimeline(previousFeeds: FeedLog[]) {
+    export async function updateTimeline(previousFeeds: FeedLog[]) {
         if (!browser) {
             return;
         }
@@ -26,9 +27,17 @@
             return;
         }
 
-        const ctx = (
-            document.getElementById("timelineChart") as HTMLCanvasElement
-        ).getContext("2d");
+        await tick();
+
+        const canvas = document.getElementById(
+            "timelineChart",
+        ) as HTMLCanvasElement | null;
+
+        if (!canvas) {
+            return;
+        }
+
+        const ctx = canvas.getContext("2d");
 
         if (feedTimeline instanceof Chart) {
             feedTimeline.destroy();
