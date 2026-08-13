@@ -68,6 +68,10 @@
 
     function stopFeedingTimer() {
         clearInterval(stopwatchInterval);
+        if (isPaused && pauseStartedAt !== undefined) {
+            pausedDurationMs += Date.now() - pauseStartedAt;
+            pauseStartedAt = undefined;
+        }
         isFeeding = false;
         isPaused = false;
 
