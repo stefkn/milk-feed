@@ -3,7 +3,7 @@
     import localforage from "localforage";
     import { format } from "@formkit/tempo";
     import type { FeedLog } from "$lib/types";
-    import { feedElapsedMs, feedElapsedSeconds } from "$lib/feed";
+    import { feedElapsedMs, feedElapsedSeconds, generateFeedId } from "$lib/feed";
 
     let currentTime = format(new Date(), {
         date: "short",
@@ -90,7 +90,7 @@
         }
 
         const newFinishedFeed: FeedLog = {
-            feedId: new Date().getTime().toString(),
+            feedId: generateFeedId(),
             start: currentFeed.start,
             end: currentFeed.end,
             duration: feedDurationSeconds,
@@ -223,6 +223,7 @@
             <input
                 type="number"
                 min="0"
+                max={bottleSize}
                 bind:value={remainingMilk}
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
