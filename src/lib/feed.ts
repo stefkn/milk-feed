@@ -4,7 +4,14 @@ import type { FeedLog } from "./types";
 export function milkConsumed(feed: FeedLog): number {
   const bottleSize = Number(feed.bottleSize) || 0;
   const remainingMilk = Number(feed.remainingMilk) || 0;
-  return bottleSize - remainingMilk;
+  return Math.max(0, bottleSize - remainingMilk);
+}
+
+export function generateFeedId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export function totalMilk(feeds: FeedLog[]): number {

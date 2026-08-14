@@ -8,6 +8,7 @@ import {
   applyFeedEdit,
   feedElapsedMs,
   feedElapsedSeconds,
+  generateFeedId,
 } from "./feed";
 import type { FeedLog } from "./types";
 
@@ -49,6 +50,22 @@ describe("milkConsumed", () => {
       remainingMilk: Number.NaN,
     });
     expect(milkConsumed(feed)).toBe(0);
+  });
+
+  it("clamps to zero when more milk remains than the bottle size", () => {
+    const feed = makeFeed({ bottleSize: 120, remainingMilk: 150 });
+    expect(milkConsumed(feed)).toBe(0);
+  });
+});
+
+describe("generateFeedId", () => {
+  it("returns a non-empty string", () => {
+    expect(generateFeedId().length).toBeGreaterThan(0);
+  });
+
+  it("returns unique ids", () => {
+    const ids = new Set(Array.from({ length: 1000 }, generateFeedId));
+    expect(ids.size).toBe(1000);
   });
 });
 

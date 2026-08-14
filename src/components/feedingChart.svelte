@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tick } from "svelte";
     import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
@@ -13,18 +14,26 @@
     export let previousFeeds: FeedLog[] = [];
     let feedChart: Chart | undefined = undefined;
 
-    export function updateFeedChart(previousFeeds: FeedLog[]) {
+    export async function updateFeedChart(previousFeeds: FeedLog[]) {
         if (!browser) {
             return;
         }
 
-        const ctx = document.getElementById("myChart");
+        await tick();
 
         if (feedChart instanceof Chart) {
             feedChart.destroy();
         }
 
         if (previousFeeds.length === 0) {
+            return;
+        }
+
+        const canvas = document.getElementById(
+            "myChart",
+        ) as HTMLCanvasElement | null;
+
+        if (!canvas) {
             return;
         }
 
@@ -49,39 +58,34 @@
             /** @type {string} */ label: string,
             /** @type {any[]} */ dataSet: number[],
         ) => {
-            if (ctx && ctx instanceof HTMLCanvasElement) {
-                if (feedChart instanceof Chart) {
-                    feedChart.destroy();
-                }
-                feedChart = new Chart(ctx, {
-                    type: "bar",
-                    data: {
-                        labels: previousFeedTimes,
-                        datasets: [
-                            {
-                                label: label,
-                                data: dataSet,
-                                borderWidth: 1,
+            feedChart = new Chart(canvas, {
+                type: "bar",
+                data: {
+                    labels: previousFeedTimes,
+                    datasets: [
+                        {
+                            label: label,
+                            data: dataSet,
+                            borderWidth: 1,
+                        },
+                    ],
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: "gray",
                             },
-                        ],
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: "gray",
-                                },
-                            },
-                            x: {
-                                grid: {
-                                    color: "gray",
-                                },
+                        },
+                        x: {
+                            grid: {
+                                color: "gray",
                             },
                         },
                     },
-                });
-            }
+                },
+            });
         };
 
         switch (chartType) {

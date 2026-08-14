@@ -2,12 +2,12 @@
     import { format } from "@formkit/tempo";
     import { createEventDispatcher } from "svelte";
     import type { FeedLog } from "../lib/types";
-    import { milkConsumed, formatDuration, applyFeedEdit } from "../lib/feed";
+    import { milkConsumed, formatDuration, applyFeedEdit, generateFeedId } from "../lib/feed";
 
     const dispatch = createEventDispatcher();
 
     export let feed: FeedLog = {
-        feedId: new Date().getTime().toString(),
+        feedId: generateFeedId(),
         start: new Date(),
         end: new Date(),
         duration: 0,
@@ -36,6 +36,12 @@
         const { name, value } = event.target;
         updatedFeed = applyFeedEdit(updatedFeed, name, value);
         updatedFeedDuration = updatedFeed.duration;
+    }
+
+    function handleDelete() {
+        if (window.confirm("Delete this feed?")) {
+            dispatch("deletefeed", feed);
+        }
     }
 </script>
 
@@ -118,6 +124,7 @@
                         type="number"
                         name="remainingMilk"
                         min="0"
+                        max={updatedFeed.bottleSize}
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
                         bind:value={updatedFeed.remainingMilk}
                         on:change={handleUpdateFeedChange}
@@ -172,7 +179,7 @@
                 >
             </button>
             <button
-                on:click={() => dispatch("deletefeed", feed)}
+                on:click={handleDelete}
                 class="bg-red-400 p-1 rounded-md h-8"
             >
                 <svg
