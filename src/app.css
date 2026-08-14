@@ -13,8 +13,14 @@ h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
     color: rgb(16, 16, 16);
 }
 
+html {
+    background-color: rgb(32, 32, 32);
+}
+
 body {
     background-color: rgb(32, 32, 32);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 html {
@@ -25,6 +31,7 @@ html {
 
 html.nv {
     filter: contrast(1.8) brightness(0.7);
+    background-color: #000;
     .overlay {
         background-color: rgb(255 0 0);
         height: 100%;
@@ -37,6 +44,10 @@ html.nv {
     h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
         color: rgb(255, 174, 174);
     }
+}
+
+html.nv body {
+    background-color: #000;
 }
 
 .main-button {
