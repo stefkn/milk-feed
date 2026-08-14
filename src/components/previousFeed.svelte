@@ -100,6 +100,23 @@
 
                 <div>
                     <label
+                        for="type"
+                        class="block text-sm font-medium text-gray-900 dark:text-white"
+                        >Type</label
+                    >
+                    <select
+                        name="type"
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
+                        bind:value={updatedFeed.type}
+                        on:change={handleUpdateFeedChange}
+                    >
+                        <option value="bottle">Bottle</option>
+                        <option value="breast">Breast</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label
                         for="bottleSize"
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >Bottle Size (ml)</label
@@ -108,7 +125,8 @@
                         type="number"
                         name="bottleSize"
                         min="0"
-                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-24"
+                        disabled={updatedFeed.type === "breast"}
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-24 disabled:bg-gray-700 disabled:opacity-50"
                         bind:value={updatedFeed.bottleSize}
                         on:change={handleUpdateFeedChange}
                     />
@@ -125,7 +143,8 @@
                         name="remainingMilk"
                         min="0"
                         max={updatedFeed.bottleSize}
-                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
+                        disabled={updatedFeed.type === "breast"}
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-28 disabled:bg-gray-700 disabled:opacity-50"
                         bind:value={updatedFeed.remainingMilk}
                         on:change={handleUpdateFeedChange}
                     />
@@ -151,8 +170,11 @@
                 {formatDuration(feed.duration)}
             </span>
             <span>
-                {milkConsumed(feed)}
-                ml
+                {#if feed.type === "breast"}
+                    Breast
+                {:else}
+                    {milkConsumed(feed)} ml
+                {/if}
             </span>
         {/if}
         <div class="flex gap-2">
