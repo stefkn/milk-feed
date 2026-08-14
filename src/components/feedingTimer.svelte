@@ -35,6 +35,14 @@
 
     const BOTTLE_PRESETS = [120, 150, 180, 210];
 
+    $: remainingPercent =
+        bottleSize > 0
+            ? Math.min(
+                  100,
+                  Math.max(0, Math.round((remainingMilk / bottleSize) * 100)),
+              )
+            : 0;
+
     function toggleSticky() {
         isSticky = !isSticky;
     }
@@ -142,6 +150,11 @@
     function setBottleSize(size: number) {
         bottleSize = size;
         updateSavedBottleSize(size);
+    }
+
+    function handleRemainingSlider(event: Event) {
+        const percent = Number((event.target as HTMLInputElement).value);
+        remainingMilk = Math.round((bottleSize * percent) / 100);
     }
 
     onMount(() => {
@@ -271,6 +284,17 @@
                     max={bottleSize}
                     bind:value={remainingMilk}
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                />
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={remainingPercent}
+                    disabled={bottleSize === 0}
+                    on:input={handleRemainingSlider}
+                    class="w-full mt-2"
+                    aria-label="Milk remaining percentage"
                 />
             </div>
         </div>
