@@ -33,6 +33,16 @@
     let feedType = "bottle";
     let feedDurationSeconds = 0;
 
+    const BOTTLE_PRESETS = [120, 150, 180, 210];
+
+    $: remainingPercent =
+        bottleSize > 0
+            ? Math.min(
+                  100,
+                  Math.max(0, Math.round((remainingMilk / bottleSize) * 100)),
+              )
+            : 0;
+
     function toggleSticky() {
         isSticky = !isSticky;
     }
@@ -137,6 +147,16 @@
         });
     }
 
+    function setBottleSize(size: number) {
+        bottleSize = size;
+        updateSavedBottleSize(size);
+    }
+
+    function handleRemainingSlider(event: Event) {
+        const percent = Number((event.target as HTMLInputElement).value);
+        remainingMilk = Math.round((bottleSize * percent) / 100);
+    }
+
     onMount(() => {
         updateCurrentTime();
         clockInterval = setInterval(updateCurrentTime, 1000);
@@ -237,6 +257,20 @@
                     on:input={() => updateSavedBottleSize(bottleSize)}
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 />
+                <div class="flex flex-wrap gap-1 mt-2">
+                    {#each BOTTLE_PRESETS as preset}
+                        <button
+                            type="button"
+                            disabled={isFeeding}
+                            on:click={() => setBottleSize(preset)}
+                            class="px-2 py-1 rounded-full text-xs font-medium disabled:opacity-50 {bottleSize ===
+                            preset
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}"
+                            >{preset}ml</button
+                        >
+                    {/each}
+                </div>
             </div>
             <div class="flex-1">
                 <label
@@ -250,6 +284,17 @@
                     max={bottleSize}
                     bind:value={remainingMilk}
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                />
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={remainingPercent}
+                    disabled={bottleSize === 0}
+                    on:input={handleRemainingSlider}
+                    class="w-full mt-2"
+                    aria-label="Milk remaining percentage"
                 />
             </div>
         </div>
