@@ -147,6 +147,11 @@ describe("applyFeedEdit", () => {
     expect(feed.remainingMilk).toBe(30);
   });
 
+  it("updates type", () => {
+    const feed = applyFeedEdit(base(), "type", "breast");
+    expect(feed.type).toBe("breast");
+  });
+
   it("recomputes duration when start is edited", () => {
     const feed = applyFeedEdit(base(), "start", "2024-01-01T00:03:00");
     expect(feed.duration).toBe(120);

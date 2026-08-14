@@ -55,6 +55,9 @@ export function applyFeedEdit(
     case "remainingMilk":
       updatedFeed.remainingMilk = Number(value);
       break;
+    case "type":
+      updatedFeed.type = value;
+      break;
     case "duration":
       updatedFeed.duration = Number(value);
       break;
