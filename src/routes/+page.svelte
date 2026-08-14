@@ -3,6 +3,7 @@
 	import { browser } from "$app/environment";
 	import localforage from "localforage";
 	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
+	import { feedsToCsv, csvToFeeds, mergeFeedsById } from "../lib/csv";
 	import { sortFeedsByStart } from "../lib/feed";
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
@@ -21,7 +22,54 @@
 
 	let feedingChartComponent: FeedingChartInterface;
 	let timelineComponent: TimelineInterface;
+	let fileInput: HTMLInputElement;
+	let isMenuOpen = false;
 	let isDarkMode: Boolean = browser ? document.documentElement.classList.contains("dark") : false;
+
+	function toggleMenu() {
+		isMenuOpen = !isMenuOpen;
+	}
+
+	function persistFeeds() {
+		localforage
+			.setItem("previousFeeds", previousFeeds)
+			.catch(function (err) {
+				console.error(err);
+			});
+	}
+
+	function handleExportCsv() {
+		if (!browser) {
+			return;
+		}
+
+		const blob = new Blob([feedsToCsv(previousFeeds)], {
+			type: "text/csv;charset=utf-8;",
+		});
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = "milk-feed.csv";
+		link.click();
+		URL.revokeObjectURL(url);
+	}
+
+	async function handleImportCsv(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+
+		if (!file) {
+			return;
+		}
+
+		previousFeeds = sortFeedsByStart(
+			mergeFeedsById(previousFeeds, csvToFeeds(await file.text())),
+		);
+		persistFeeds();
+		feedingChartComponent.updateFeedChart(previousFeeds);
+		timelineComponent.updateTimeline(previousFeeds);
+		input.value = "";
+	}
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
 		previousFeeds = sortFeedsByStart([...previousFeeds, event.detail]);
@@ -81,6 +129,66 @@
 		<div class="flex justify-between max-w-xl m-auto">
 			<h1 class="text-3xl">milkfeed</h1>
 			<div class="flex gap-2">
+				<div class="relative">
+					<button
+						on:click={toggleMenu}
+						aria-haspopup="menu"
+						aria-expanded={isMenuOpen}
+						class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-3 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
+						><svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="feather feather-menu"
+							><line x1="3" y1="12" x2="21" y2="12"></line><line
+								x1="3"
+								y1="6"
+								x2="21"
+								y2="6"
+							></line><line
+								x1="3"
+								y1="18"
+								x2="21"
+								y2="18"
+							></line></svg
+						></button
+					>
+					{#if isMenuOpen}
+						<div
+							class="absolute right-0 z-10 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700"
+						>
+							<button
+								on:click={() => {
+									handleExportCsv();
+									isMenuOpen = false;
+								}}
+								class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>Export CSV</button
+							>
+							<button
+								on:click={() => {
+									fileInput.click();
+									isMenuOpen = false;
+								}}
+								class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>Import CSV</button
+							>
+						</div>
+					{/if}
+				</div>
+				<input
+					type="file"
+					accept=".csv,text/csv"
+					class="hidden"
+					bind:this={fileInput}
+					on:change={handleImportCsv}
+				/>
 				<button
 					on:click={handleToggleLightDarkMode}
 					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
