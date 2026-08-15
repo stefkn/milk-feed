@@ -49,6 +49,17 @@ describe("feedsToCsv", () => {
     const [restored] = csvToFeeds(feedsToCsv([feed]));
     expect(restored.type).toBe('bottle, "large"');
   });
+
+  it("round-trips an estimatedMilk override", () => {
+    const feed = makeFeed({ type: "breast", estimatedMilk: 75 });
+    const [restored] = csvToFeeds(feedsToCsv([feed]));
+    expect(restored.estimatedMilk).toBe(75);
+  });
+
+  it("leaves estimatedMilk undefined when it is absent", () => {
+    const [restored] = csvToFeeds(feedsToCsv([makeFeed()]));
+    expect(restored.estimatedMilk).toBeUndefined();
+  });
 });
 
 describe("csvToFeeds", () => {

@@ -7,6 +7,23 @@ export function milkConsumed(feed: FeedLog): number {
   return Math.max(0, bottleSize - remainingMilk);
 }
 
+export const DEFAULT_ML_PER_MINUTE = 10;
+
+export function estimatedMilkConsumed(
+  feed: FeedLog,
+  mlPerMinute: number,
+): number {
+  if (feed.type !== "breast") {
+    return milkConsumed(feed);
+  }
+  if (feed.estimatedMilk !== undefined) {
+    return Math.max(0, Number(feed.estimatedMilk) || 0);
+  }
+  const rate = Number(mlPerMinute) || 0;
+  const minutes = (Number(feed.duration) || 0) / 60;
+  return Math.max(0, Math.round(rate * minutes));
+}
+
 export function generateFeedId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -94,6 +111,9 @@ export function applyFeedEdit(
       break;
     case "remainingMilk":
       updatedFeed.remainingMilk = Number(value);
+      break;
+    case "estimatedMilk":
+      updatedFeed.estimatedMilk = value === "" ? undefined : Number(value);
       break;
     case "type":
       updatedFeed.type = value;

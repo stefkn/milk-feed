@@ -1,18 +1,63 @@
 <script lang="ts">
-    import { tick } from "svelte";
+    import { tick, onMount } from "svelte";
+    import localforage from "localforage";
     import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
     import Chart from "chart.js/auto";
-    import { milkConsumed } from "../lib/feed";
+    import {
+        milkConsumed,
+        estimatedMilkConsumed,
+        DEFAULT_ML_PER_MINUTE,
+    } from "../lib/feed";
 
     const CHART_FEEDING_TIME = "feeding_time";
     const CHART_FEEDING_SIZE = "bottle_size";
     const CHART_FEEDING_SPEED = "feeding_speed";
     let chartType = CHART_FEEDING_TIME;
 
+    const ACTUAL_COLOR = "rgba(34, 197, 94, 0.85)";
+    const ESTIMATED_BASE = "rgba(59, 130, 246, 0.3)";
+    const ESTIMATED_LINE = "rgba(59, 130, 246, 0.9)";
+
     export let previousFeeds: FeedLog[] = [];
     let feedChart: Chart | undefined = undefined;
+    let mlPerMinute = DEFAULT_ML_PER_MINUTE;
+
+    function createHatchPattern(): CanvasPattern | undefined {
+        const size = 8;
+        const patternCanvas = document.createElement("canvas");
+        patternCanvas.width = size;
+        patternCanvas.height = size;
+        const ctx = patternCanvas.getContext("2d");
+        if (!ctx) {
+            return undefined;
+        }
+        ctx.fillStyle = ESTIMATED_BASE;
+        ctx.fillRect(0, 0, size, size);
+        ctx.strokeStyle = ESTIMATED_LINE;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-size, size);
+        ctx.lineTo(size * 2, -size);
+        ctx.stroke();
+        return ctx.createPattern(patternCanvas, "repeat") ?? undefined;
+    }
+
+    function saveMlPerMinute() {
+        localforage.setItem("mlPerMinute", mlPerMinute).catch(function (err) {
+            console.error(err);
+        });
+    }
+
+    function handleMlPerMinuteInput() {
+        const parsed = Number(mlPerMinute);
+        mlPerMinute = Number.isFinite(parsed) && parsed >= 0
+            ? parsed
+            : DEFAULT_ML_PER_MINUTE;
+        saveMlPerMinute();
+        updateFeedChart(previousFeeds);
+    }
 
     export async function updateFeedChart(previousFeeds: FeedLog[]) {
         if (!browser) {
@@ -41,67 +86,113 @@
             format(feed.start, { time: "short" }),
         );
 
-        const previousFeedDurations = previousFeeds.map(
-            (feed) => feed.duration,
-        );
+        const scales = {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: "gray",
+                },
+            },
+            x: {
+                grid: {
+                    color: "gray",
+                },
+            },
+        };
 
-        const previousFeedSizes = previousFeeds.map((feed) => milkConsumed(feed));
+        if (chartType === CHART_FEEDING_SIZE) {
+            const hatchPattern = createHatchPattern();
+            const sizes = previousFeeds.map((feed) =>
+                estimatedMilkConsumed(feed, mlPerMinute),
+            );
+            const backgroundColors = previousFeeds.map((feed) =>
+                feed.type === "breast"
+                    ? hatchPattern ?? ACTUAL_COLOR
+                    : ACTUAL_COLOR,
+            );
 
-        const previousFeedSpeeds = previousFeeds.map((feed) => {
-            if (feed.duration === 0) {
-                return 0;
-            }
-            return milkConsumed(feed) / feed.duration;
-        });
-
-        const chartGeneratorFunction = (
-            /** @type {string} */ label: string,
-            /** @type {any[]} */ dataSet: number[],
-        ) => {
             feedChart = new Chart(canvas, {
                 type: "bar",
                 data: {
                     labels: previousFeedTimes,
                     datasets: [
                         {
-                            label: label,
-                            data: dataSet,
+                            label: "milk (ml)",
+                            data: sizes,
+                            backgroundColor: backgroundColors,
                             borderWidth: 1,
                         },
                     ],
                 },
                 options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: "gray",
-                            },
-                        },
-                        x: {
-                            grid: {
-                                color: "gray",
+                    scales,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (item) => {
+                                    const feed =
+                                        previousFeeds[item.dataIndex];
+                                    const value = Number(item.parsed.y);
+                                    if (feed?.type === "breast") {
+                                        return ` ${value} ml (estimated)`;
+                                    }
+                                    return ` ${value} ml`;
+                                },
                             },
                         },
                     },
                 },
             });
-        };
-
-        switch (chartType) {
-            case CHART_FEEDING_TIME:
-                chartGeneratorFunction("seconds", previousFeedDurations);
-                break;
-            case CHART_FEEDING_SIZE:
-                chartGeneratorFunction("ml", previousFeedSizes);
-                break;
-            case CHART_FEEDING_SPEED:
-                chartGeneratorFunction("ml/s", previousFeedSpeeds);
-                break;
+            return;
         }
 
-        return () => {};
+        let label: string;
+        let dataSet: number[];
+
+        if (chartType === CHART_FEEDING_TIME) {
+            label = "seconds";
+            dataSet = previousFeeds.map((feed) => feed.duration);
+        } else {
+            label = "ml/s";
+            dataSet = previousFeeds.map((feed) => {
+                if (feed.duration === 0) {
+                    return 0;
+                }
+                return milkConsumed(feed) / feed.duration;
+            });
+        }
+
+        feedChart = new Chart(canvas, {
+            type: "bar",
+            data: {
+                labels: previousFeedTimes,
+                datasets: [
+                    {
+                        label: label,
+                        data: dataSet,
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: { scales },
+        });
     }
+
+    onMount(() => {
+        localforage
+            .getItem("mlPerMinute")
+            .then((value: any) => {
+                const parsed = Number(value);
+                mlPerMinute =
+                    Number.isFinite(parsed) && parsed >= 0
+                        ? parsed
+                        : DEFAULT_ML_PER_MINUTE;
+                updateFeedChart(previousFeeds);
+            })
+            .catch(function (err) {
+                console.error(err);
+            });
+    });
 </script>
 
 <div>
@@ -128,6 +219,24 @@
                 <option value={CHART_FEEDING_SIZE}>milk consumed (ml)</option>
                 <option value={CHART_FEEDING_SPEED}>feeding speed</option>
             </select>
+
+            <label
+                for="mlPerMinute"
+                class="block mt-3 mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >Estimated breast milk (ml/min)</label
+            >
+            <input
+                type="number"
+                id="mlPerMinute"
+                min="0"
+                step="0.5"
+                bind:value={mlPerMinute}
+                on:change={handleMlPerMinuteInput}
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Hatched bars are estimated breast milk.
+            </p>
         </div>
     {/if}
 </div>
