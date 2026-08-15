@@ -12,9 +12,10 @@
     export let previousFeeds: FeedLog[] = [];
 
     let sortOrder: "oldest" | "newest" = "oldest";
+    let now = new Date();
 
-    $: todayFeeds = feedsOnDate(previousFeeds, new Date());
-    $: sinceLastFeed = timeSinceLastFeed(previousFeeds);
+    $: todayFeeds = feedsOnDate(previousFeeds, now);
+    $: sinceLastFeed = timeSinceLastFeed(previousFeeds, now.getTime());
     $: displayedFeeds =
         sortOrder === "newest" ? [...previousFeeds].reverse() : previousFeeds;
 
@@ -38,6 +39,12 @@
             .catch(function (err) {
                 console.error(err);
             });
+
+        const interval = setInterval(() => {
+            now = new Date();
+        }, 30000);
+
+        return () => clearInterval(interval);
     });
 
     function deletePreviousFeed(event: any) {
