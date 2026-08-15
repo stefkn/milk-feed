@@ -13,30 +13,36 @@ h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
     color: rgb(16, 16, 16);
 }
 
-body {
+html {
     background-color: rgb(32, 32, 32);
 }
 
-html {
-    .overlay {
-        display: none;
-    }
+body {
+    background-color: rgb(32, 32, 32);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 html.nv {
-    filter: contrast(1.8) brightness(0.7);
-    .overlay {
-        background-color: rgb(255 0 0);
-        height: 100%;
-        width: 100%;
-        position: fixed;
-        display: block;
-        mix-blend-mode: hue;
-        pointer-events: none;
-    }
+    background-color: #000;
+    filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(6)
+        contrast(1.4) brightness(0.6);
     h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
         color: rgb(255, 174, 174);
     }
+    button,
+    input,
+    select {
+        background-color: #000 !important;
+    }
+    button.bg-emerald-600.text-white {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+}
+
+html.nv body {
+    background-color: #000;
 }
 
 .main-button {
