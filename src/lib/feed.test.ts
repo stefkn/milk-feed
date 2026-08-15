@@ -13,6 +13,7 @@ import {
   timeSinceLastFeed,
   formatTimeSince,
   DEFAULT_ML_PER_MINUTE,
+  feedsSpanMultipleDays,
 } from "./feed";
 import type { FeedLog } from "./types";
 
@@ -285,6 +286,29 @@ describe("feedsOnDate", () => {
       makeFeed({ feedId: "c", start: new Date(2024, 0, 16, 0, 0) }),
     ];
     expect(feedsOnDate(feeds, date).map((f) => f.feedId)).toEqual(["a"]);
+  });
+});
+
+describe("feedsSpanMultipleDays", () => {
+  it("returns false for fewer than two feeds", () => {
+    expect(feedsSpanMultipleDays([])).toBe(false);
+    expect(feedsSpanMultipleDays([makeFeed()])).toBe(false);
+  });
+
+  it("returns false when all feeds are on the same day", () => {
+    const feeds = [
+      makeFeed({ start: new Date(2024, 0, 15, 9, 0) }),
+      makeFeed({ start: new Date(2024, 0, 15, 23, 0) }),
+    ];
+    expect(feedsSpanMultipleDays(feeds)).toBe(false);
+  });
+
+  it("returns true when feeds span multiple days", () => {
+    const feeds = [
+      makeFeed({ start: new Date(2024, 0, 15, 9, 0) }),
+      makeFeed({ start: new Date(2024, 0, 16, 9, 0) }),
+    ];
+    expect(feedsSpanMultipleDays(feeds)).toBe(true);
   });
 });
 

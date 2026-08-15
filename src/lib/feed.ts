@@ -40,6 +40,16 @@ export function totalDuration(feeds: FeedLog[]): number {
   return feeds.reduce((acc, feed) => acc + (Number(feed.duration) || 0), 0);
 }
 
+export function feedsSpanMultipleDays(feeds: FeedLog[]): boolean {
+  if (feeds.length < 2) {
+    return false;
+  }
+  const times = feeds.map((feed) => new Date(feed.start).getTime());
+  const min = Math.min(...times);
+  const max = Math.max(...times);
+  return new Date(min).toDateString() !== new Date(max).toDateString();
+}
+
 export function formatDuration(seconds: number): string {
   if (seconds <= 60) {
     return `${seconds}sec`;
