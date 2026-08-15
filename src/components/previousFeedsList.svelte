@@ -1,6 +1,7 @@
 <script lang="ts">
+    import { onMount, createEventDispatcher } from 'svelte';
+    import localforage from "localforage";
     import PreviousFeed from "./previousFeed.svelte";
-    import { createEventDispatcher } from 'svelte';
     import type { FeedLog } from '../lib/types';
     import { totalMilk, totalDuration, feedsOnDate, timeSinceLastFeed, formatTimeSince } from "../lib/feed";
 
@@ -10,8 +11,34 @@
 
     export let previousFeeds: FeedLog[] = [];
 
+    let sortOrder: "oldest" | "newest" = "oldest";
+
     $: todayFeeds = feedsOnDate(previousFeeds, new Date());
     $: sinceLastFeed = timeSinceLastFeed(previousFeeds);
+    $: displayedFeeds =
+        sortOrder === "newest" ? [...previousFeeds].reverse() : previousFeeds;
+
+    function toggleSortOrder() {
+        sortOrder = sortOrder === "oldest" ? "newest" : "oldest";
+        localforage
+            .setItem("feedSortOrder", sortOrder)
+            .catch(function (err) {
+                console.error(err);
+            });
+    }
+
+    onMount(() => {
+        localforage
+            .getItem("feedSortOrder")
+            .then((value) => {
+                if (value === "newest" || value === "oldest") {
+                    sortOrder = value;
+                }
+            })
+            .catch(function (err) {
+                console.error(err);
+            });
+    });
 
     function deletePreviousFeed(event: any) {
         const newPreviousFeeds = previousFeeds.filter((f) => f.feedId !== event.detail.feedId);
@@ -43,6 +70,13 @@
     {#if previousFeeds.length === 0}
         <p class="text-left">No previous feeds.</p>
     {:else}
+        <div class="flex justify-end mb-1">
+            <button
+                on:click={toggleSortOrder}
+                class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                >Sort: {sortOrder === "oldest" ? "Oldest first" : "Newest first"}</button
+            >
+        </div>
         <div class="w-full dark:bg-gray-800 rounded-lg p-4">
             <div class="flex gap-4 justify-between">
                 <p>
@@ -74,7 +108,7 @@
                 </p>
             </div>
         </div>
-        {#each previousFeeds as feed}
+        {#each displayedFeeds as feed}
             <PreviousFeed {feed} on:deletefeed={deletePreviousFeed} on:updatefeed={updateFeed} />
         {/each}
     {/if}
