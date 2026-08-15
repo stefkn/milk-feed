@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { tick } from "svelte";
+    import { tick, onMount } from "svelte";
+    import { get } from "svelte/store";
     import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
     import { format, parse } from "@formkit/tempo";
     import { Chart } from "chart.js/auto";
     import "chartjs-adapter-date-fns";
-    import { milkConsumed } from "../lib/feed";
+    import { milkConsumed, mlPerMinute } from "../lib/feed";
 
     export let previousFeeds: FeedLog[] = [];
     let feedTimeline: Chart | undefined = undefined;
@@ -28,6 +29,8 @@
         }
 
         await tick();
+
+        const rate = get(mlPerMinute);
 
         const canvas = document.getElementById(
             "timelineChart",
@@ -57,7 +60,7 @@
                             return {
                                 x: [feed.start, feed.end],
                                 y: 0,
-                                fedMilk: milkConsumed(feed),
+                                fedMilk: milkConsumed(feed, rate),
                                 start: format(feed.start, "HH:mm"),
                                 end: format(feed.end, "HH:mm"),
                             }
@@ -134,6 +137,12 @@
 
         return () => {};
     }
+
+    onMount(() => {
+        return mlPerMinute.subscribe(() => {
+            updateTimeline(previousFeeds);
+        });
+    });
 </script>
 
 <div>

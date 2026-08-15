@@ -1,15 +1,12 @@
 <script lang="ts">
     import { tick, onMount } from "svelte";
+    import { get } from "svelte/store";
     import localforage from "localforage";
     import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
     import Chart from "chart.js/auto";
-    import {
-        milkConsumed,
-        estimatedMilkConsumed,
-        DEFAULT_ML_PER_MINUTE,
-    } from "../lib/feed";
+    import { milkConsumed, mlPerMinute, DEFAULT_ML_PER_MINUTE } from "../lib/feed";
 
     const CHART_FEEDING_TIME = "feeding_time";
     const CHART_FEEDING_SIZE = "bottle_size";
@@ -22,7 +19,7 @@
 
     export let previousFeeds: FeedLog[] = [];
     let feedChart: Chart | undefined = undefined;
-    let mlPerMinute = DEFAULT_ML_PER_MINUTE;
+    let mlPerMinuteInput = DEFAULT_ML_PER_MINUTE;
 
     function createHatchPattern(): CanvasPattern | undefined {
         const size = 8;
@@ -44,19 +41,20 @@
         return ctx.createPattern(patternCanvas, "repeat") ?? undefined;
     }
 
-    function saveMlPerMinute() {
-        localforage.setItem("mlPerMinute", mlPerMinute).catch(function (err) {
+    function saveMlPerMinute(rate: number) {
+        localforage.setItem("mlPerMinute", rate).catch(function (err) {
             console.error(err);
         });
     }
 
     function handleMlPerMinuteInput() {
-        const parsed = Number(mlPerMinute);
-        mlPerMinute = Number.isFinite(parsed) && parsed >= 0
+        const parsed = Number(mlPerMinuteInput);
+        const rate = Number.isFinite(parsed) && parsed >= 0
             ? parsed
             : DEFAULT_ML_PER_MINUTE;
-        saveMlPerMinute();
-        updateFeedChart(previousFeeds);
+        mlPerMinuteInput = rate;
+        mlPerMinute.set(rate);
+        saveMlPerMinute(rate);
     }
 
     export async function updateFeedChart(previousFeeds: FeedLog[]) {
@@ -86,6 +84,8 @@
             format(feed.start, { time: "short" }),
         );
 
+        const rate = get(mlPerMinute);
+
         const scales = {
             y: {
                 beginAtZero: true,
@@ -103,7 +103,7 @@
         if (chartType === CHART_FEEDING_SIZE) {
             const hatchPattern = createHatchPattern();
             const sizes = previousFeeds.map((feed) =>
-                estimatedMilkConsumed(feed, mlPerMinute),
+                milkConsumed(feed, rate),
             );
             const backgroundColors = previousFeeds.map((feed) =>
                 feed.type === "breast"
@@ -158,7 +158,7 @@
                 if (feed.duration === 0) {
                     return 0;
                 }
-                return milkConsumed(feed) / feed.duration;
+                return milkConsumed(feed, rate) / feed.duration;
             });
         }
 
@@ -179,19 +179,25 @@
     }
 
     onMount(() => {
+        const unsubscribe = mlPerMinute.subscribe((rate) => {
+            mlPerMinuteInput = rate;
+            updateFeedChart(previousFeeds);
+        });
+
         localforage
             .getItem("mlPerMinute")
             .then((value: any) => {
                 const parsed = Number(value);
-                mlPerMinute =
-                    Number.isFinite(parsed) && parsed >= 0
-                        ? parsed
-                        : DEFAULT_ML_PER_MINUTE;
-                updateFeedChart(previousFeeds);
+                const rate = Number.isFinite(parsed) && parsed >= 0
+                    ? parsed
+                    : DEFAULT_ML_PER_MINUTE;
+                mlPerMinute.set(rate);
             })
             .catch(function (err) {
                 console.error(err);
             });
+
+        return unsubscribe;
     });
 </script>
 
@@ -230,7 +236,7 @@
                 id="mlPerMinute"
                 min="0"
                 step="0.5"
-                bind:value={mlPerMinute}
+                bind:value={mlPerMinuteInput}
                 on:change={handleMlPerMinuteInput}
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />

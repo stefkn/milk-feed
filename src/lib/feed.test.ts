@@ -12,7 +12,6 @@ import {
   feedsOnDate,
   timeSinceLastFeed,
   formatTimeSince,
-  estimatedMilkConsumed,
   DEFAULT_ML_PER_MINUTE,
 } from "./feed";
 import type { FeedLog } from "./types";
@@ -63,7 +62,7 @@ describe("milkConsumed", () => {
   });
 });
 
-describe("estimatedMilkConsumed", () => {
+describe("milkConsumed (breast feeds)", () => {
   it("returns actual milk for bottle feeds", () => {
     const feed = makeFeed({
       type: "bottle",
@@ -71,28 +70,28 @@ describe("estimatedMilkConsumed", () => {
       remainingMilk: 30,
       estimatedMilk: 50,
     });
-    expect(estimatedMilkConsumed(feed, 10)).toBe(90);
+    expect(milkConsumed(feed, 10)).toBe(90);
   });
 
   it("returns the per-feed override for breast feeds", () => {
     const feed = makeFeed({ type: "breast", duration: 600, estimatedMilk: 75 });
-    expect(estimatedMilkConsumed(feed, 10)).toBe(75);
+    expect(milkConsumed(feed, 10)).toBe(75);
   });
 
   it("estimates from duration and ml/min when no override is set", () => {
     const feed = makeFeed({ type: "breast", duration: 600 });
-    expect(estimatedMilkConsumed(feed, 10)).toBe(100);
+    expect(milkConsumed(feed, 10)).toBe(100);
   });
 
   it("rounds the estimate to the nearest ml", () => {
     const feed = makeFeed({ type: "breast", duration: 125 });
-    expect(estimatedMilkConsumed(feed, 10)).toBe(21);
+    expect(milkConsumed(feed, 10)).toBe(21);
   });
 
   it("treats a zero or negative rate as zero", () => {
     const feed = makeFeed({ type: "breast", duration: 600 });
-    expect(estimatedMilkConsumed(feed, 0)).toBe(0);
-    expect(estimatedMilkConsumed(feed, -5)).toBe(0);
+    expect(milkConsumed(feed, 0)).toBe(0);
+    expect(milkConsumed(feed, -5)).toBe(0);
   });
 
   it("treats an invalid override as zero", () => {
@@ -101,7 +100,7 @@ describe("estimatedMilkConsumed", () => {
       duration: 600,
       estimatedMilk: Number.NaN,
     });
-    expect(estimatedMilkConsumed(feed, 10)).toBe(0);
+    expect(milkConsumed(feed, 10)).toBe(0);
   });
 
   it("exposes a default rate for the UI", () => {
@@ -131,6 +130,14 @@ describe("totalMilk", () => {
 
   it("returns 0 for empty list", () => {
     expect(totalMilk([])).toBe(0);
+  });
+
+  it("includes estimated breast milk using the rate", () => {
+    const feeds = [
+      makeFeed({ bottleSize: 120, remainingMilk: 20 }),
+      makeFeed({ type: "breast", duration: 600 }),
+    ];
+    expect(totalMilk(feeds, 10)).toBe(200);
   });
 });
 

@@ -2,7 +2,7 @@
     import PreviousFeed from "./previousFeed.svelte";
     import { createEventDispatcher } from 'svelte';
     import type { FeedLog } from '../lib/types';
-    import { totalMilk, totalDuration, feedsOnDate, timeSinceLastFeed, formatTimeSince } from "../lib/feed";
+    import { totalMilk, totalDuration, feedsOnDate, timeSinceLastFeed, formatTimeSince, mlPerMinute } from "../lib/feed";
 
     import "../app.css";
     
@@ -49,7 +49,7 @@
                     Total feeds: {previousFeeds.length}
                 </p>
                 <p>
-                    Total milk: {totalMilk(previousFeeds)}ml
+                    Total milk: {totalMilk(previousFeeds, $mlPerMinute)}ml
                 </p>
                 <p>
                     Total time: 
@@ -65,7 +65,7 @@
                     Today: {todayFeeds.length} feed{todayFeeds.length === 1 ? "" : "s"}
                 </p>
                 <p>
-                    Today's milk: {totalMilk(todayFeeds)}ml
+                    Today's milk: {totalMilk(todayFeeds, $mlPerMinute)}ml
                 </p>
                 <p>
                     Last feed: {sinceLastFeed === undefined

@@ -2,7 +2,7 @@
     import { format } from "@formkit/tempo";
     import { createEventDispatcher } from "svelte";
     import type { FeedLog } from "../lib/types";
-    import { milkConsumed, formatDuration, applyFeedEdit, generateFeedId } from "../lib/feed";
+    import { milkConsumed, formatDuration, applyFeedEdit, generateFeedId, mlPerMinute } from "../lib/feed";
 
     const dispatch = createEventDispatcher();
 
@@ -187,11 +187,7 @@
                 {formatDuration(feed.duration)}
             </span>
             <span>
-                {#if feed.type === "breast"}
-                    Breast
-                {:else}
-                    {milkConsumed(feed)} ml
-                {/if}
+                {milkConsumed(feed, $mlPerMinute)} ml{#if feed.type === "breast"} (est){/if}
             </span>
         {/if}
         <div class="flex gap-2">
