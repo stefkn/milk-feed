@@ -50,6 +50,76 @@ export function feedsSpanMultipleDays(feeds: FeedLog[]): boolean {
   return new Date(min).toDateString() !== new Date(max).toDateString();
 }
 
+export function medianFeedInterval(
+  feeds: FeedLog[],
+  windowSize: number = 6,
+): number | undefined {
+  const sorted = sortFeedsByStart(feeds);
+  if (sorted.length < 2) {
+    return undefined;
+  }
+
+  const recent = sorted.slice(-windowSize);
+  const gaps: number[] = [];
+  for (let i = 1; i < recent.length; i++) {
+    const gap =
+      new Date(recent[i].start).getTime() -
+      new Date(recent[i - 1].start).getTime();
+    if (gap > 0) {
+      gaps.push(gap);
+    }
+  }
+
+  if (gaps.length === 0) {
+    return undefined;
+  }
+
+  const sortedGaps = [...gaps].sort((a, b) => a - b);
+  const mid = Math.floor(sortedGaps.length / 2);
+  if (sortedGaps.length % 2 === 0) {
+    return (sortedGaps[mid - 1] + sortedGaps[mid]) / 2;
+  }
+  return sortedGaps[mid];
+}
+
+export function timeUntilNextFeed(
+  feeds: FeedLog[],
+  nowMs: number = Date.now(),
+  windowSize: number = 6,
+): number | undefined {
+  if (feeds.length === 0) {
+    return undefined;
+  }
+  const interval = medianFeedInterval(feeds, windowSize);
+  if (interval === undefined) {
+    return undefined;
+  }
+  const lastStart = Math.max(
+    ...feeds.map((feed) => new Date(feed.start).getTime()),
+  );
+  const dueMs = lastStart + interval;
+  return Math.max(0, Math.floor((dueMs - nowMs) / 1000));
+}
+
+export function formatTimeUntil(seconds: number): string {
+  if (seconds <= 0) {
+    return "due now";
+  }
+  if (seconds < 60) {
+    return "in <1m";
+  }
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return `in ${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (remainingMinutes === 0) {
+    return `in ${hours}h`;
+  }
+  return `in ${hours}h ${remainingMinutes}m`;
+}
+
 export function formatDuration(seconds: number): string {
   if (seconds <= 60) {
     return `${seconds}sec`;

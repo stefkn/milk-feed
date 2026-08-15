@@ -288,7 +288,7 @@
 			</div>
 		</div>
 
-		<FeedingTimer on:newfeedfinished={handleNewFeedFinished} />
+		<FeedingTimer {previousFeeds} on:newfeedfinished={handleNewFeedFinished} />
 
 		{#if importStatus}
 			<div

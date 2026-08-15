@@ -3,7 +3,7 @@
     import localforage from "localforage";
     import PreviousFeed from "./previousFeed.svelte";
     import type { FeedLog } from '../lib/types';
-    import { totalMilk, totalDuration, feedsOnDate, timeSinceLastFeed, formatTimeSince, mlPerMinute } from "../lib/feed";
+    import { totalMilk, totalDuration, feedsOnDate, timeSinceLastFeed, formatTimeSince, timeUntilNextFeed, formatTimeUntil, mlPerMinute } from "../lib/feed";
 
     import "../app.css";
     
@@ -16,6 +16,7 @@
 
     $: todayFeeds = feedsOnDate(previousFeeds, now);
     $: sinceLastFeed = timeSinceLastFeed(previousFeeds, now.getTime());
+    $: nextFeedDueSeconds = timeUntilNextFeed(previousFeeds, now.getTime());
     $: displayedFeeds =
         sortOrder === "newest" ? [...previousFeeds].reverse() : previousFeeds;
 
@@ -112,6 +113,13 @@
                     Last feed: {sinceLastFeed === undefined
                         ? "—"
                         : formatTimeSince(sinceLastFeed)}
+                </p>
+            </div>
+            <div class="flex gap-4 justify-between mt-2 pt-2 border-t border-gray-300 dark:border-gray-700">
+                <p>
+                    Next feed: {nextFeedDueSeconds === undefined
+                        ? "—"
+                        : formatTimeUntil(nextFeedDueSeconds)}
                 </p>
             </div>
         </div>
