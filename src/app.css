@@ -30,6 +30,15 @@ html.nv {
     h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
         color: rgb(255, 174, 174);
     }
+    button,
+    input,
+    select {
+        background-color: #000 !important;
+    }
+    button.bg-emerald-600.text-white {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
 }
 
 html.nv body {
