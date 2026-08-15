@@ -122,7 +122,6 @@
 </script>
 
 <main>
-	<div class="overlay"></div>
 	<div
 		class="w-auto h-full bg-blue-100 m-auto max-w-3xl p-4 rounded-lg dark:bg-slate-900"
 	>

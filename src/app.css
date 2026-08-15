@@ -23,26 +23,10 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
-html {
-    .overlay {
-        display: none;
-    }
-}
-
 html.nv {
-    filter: contrast(1.8) brightness(0.7);
     background-color: #000;
-    .overlay {
-        background-color: rgb(255 0 0);
-        position: fixed;
-        top: env(safe-area-inset-top);
-        right: 0;
-        bottom: env(safe-area-inset-bottom);
-        left: 0;
-        display: block;
-        mix-blend-mode: hue;
-        pointer-events: none;
-    }
+    filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(6)
+        contrast(1.4) brightness(0.6);
     h1, h2, h3, h4, h5, h6, p, ul, li, label, button, select, input {
         color: rgb(255, 174, 174);
     }
