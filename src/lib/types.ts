@@ -7,6 +7,7 @@ export type FeedLog = {
     duration: number;
     bottleSize: number;
     remainingMilk: number;
+    estimatedMilk?: number;
     type: string;
 }
 

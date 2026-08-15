@@ -1,7 +1,22 @@
 import { parse, diffSeconds } from "@formkit/tempo";
+import { writable } from "svelte/store";
 import type { FeedLog } from "./types";
 
-export function milkConsumed(feed: FeedLog): number {
+export const DEFAULT_ML_PER_MINUTE = 10;
+
+export const mlPerMinute = writable(DEFAULT_ML_PER_MINUTE);
+
+export function milkConsumed(
+  feed: FeedLog,
+  rate: number = DEFAULT_ML_PER_MINUTE,
+): number {
+  if (feed.type === "breast") {
+    if (feed.estimatedMilk !== undefined) {
+      return Math.max(0, Number(feed.estimatedMilk) || 0);
+    }
+    const minutes = (Number(feed.duration) || 0) / 60;
+    return Math.max(0, Math.round((Number(rate) || 0) * minutes));
+  }
   const bottleSize = Number(feed.bottleSize) || 0;
   const remainingMilk = Number(feed.remainingMilk) || 0;
   return Math.max(0, bottleSize - remainingMilk);
@@ -14,8 +29,11 @@ export function generateFeedId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function totalMilk(feeds: FeedLog[]): number {
-  return feeds.reduce((acc, feed) => acc + milkConsumed(feed), 0);
+export function totalMilk(
+  feeds: FeedLog[],
+  rate: number = DEFAULT_ML_PER_MINUTE,
+): number {
+  return feeds.reduce((acc, feed) => acc + milkConsumed(feed, rate), 0);
 }
 
 export function totalDuration(feeds: FeedLog[]): number {
@@ -94,6 +112,9 @@ export function applyFeedEdit(
       break;
     case "remainingMilk":
       updatedFeed.remainingMilk = Number(value);
+      break;
+    case "estimatedMilk":
+      updatedFeed.estimatedMilk = value === "" ? undefined : Number(value);
       break;
     case "type":
       updatedFeed.type = value;

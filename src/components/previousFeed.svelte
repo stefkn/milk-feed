@@ -2,7 +2,7 @@
     import { format } from "@formkit/tempo";
     import { createEventDispatcher } from "svelte";
     import type { FeedLog } from "../lib/types";
-    import { milkConsumed, formatDuration, applyFeedEdit, generateFeedId } from "../lib/feed";
+    import { milkConsumed, formatDuration, applyFeedEdit, generateFeedId, mlPerMinute } from "../lib/feed";
 
     const dispatch = createEventDispatcher();
 
@@ -150,6 +150,23 @@
                     />
                 </div>
 
+                <div>
+                    <label
+                        for="estimatedMilk"
+                        class="block text-sm font-medium text-gray-900 dark:text-white"
+                        >Estimated Milk (ml)</label
+                    >
+                    <input
+                        type="number"
+                        name="estimatedMilk"
+                        min="0"
+                        disabled={updatedFeed.type === "bottle"}
+                        class="my-2 p-2.5 bg-gray-500 rounded-lg w-28 disabled:bg-gray-700 disabled:opacity-50"
+                        bind:value={updatedFeed.estimatedMilk}
+                        on:change={handleUpdateFeedChange}
+                    />
+                </div>
+
                 <button
                     class="bg-emerald-500 p-2 rounded-lg mt-4"
                     type="submit"
@@ -170,11 +187,7 @@
                 {formatDuration(feed.duration)}
             </span>
             <span>
-                {#if feed.type === "breast"}
-                    Breast
-                {:else}
-                    {milkConsumed(feed)} ml
-                {/if}
+                {milkConsumed(feed, $mlPerMinute)} ml{#if feed.type === "breast"} (est){/if}
             </span>
         {/if}
         <div class="flex gap-2">

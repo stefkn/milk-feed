@@ -8,6 +8,7 @@ export const CSV_HEADERS = [
   "duration",
   "bottleSize",
   "remainingMilk",
+  "estimatedMilk",
   "type",
 ] as const;
 
@@ -31,6 +32,7 @@ export function feedsToCsv(feeds: FeedLog[]): string {
       String(feed.duration),
       String(feed.bottleSize),
       String(feed.remainingMilk),
+      feed.estimatedMilk === undefined ? "" : String(feed.estimatedMilk),
       feed.type,
     ];
     lines.push(row.map(escapeCsvField).join(","));
@@ -118,6 +120,7 @@ export function csvToFeeds(text: string): FeedLog[] {
   const durationIdx = columnIndex("duration");
   const bottleSizeIdx = columnIndex("bottleSize");
   const remainingMilkIdx = columnIndex("remainingMilk");
+  const estimatedMilkIdx = columnIndex("estimatedMilk");
   const typeIdx = columnIndex("type");
 
   const feeds: FeedLog[] = [];
@@ -136,6 +139,10 @@ export function csvToFeeds(text: string): FeedLog[] {
         duration: toNumber(cell(row, durationIdx)),
         bottleSize: toNumber(cell(row, bottleSizeIdx)),
         remainingMilk: toNumber(cell(row, remainingMilkIdx)),
+        estimatedMilk:
+          cell(row, estimatedMilkIdx) === ""
+            ? undefined
+            : toNumber(cell(row, estimatedMilkIdx)),
         type: cell(row, typeIdx) || "bottle",
       });
     } catch {

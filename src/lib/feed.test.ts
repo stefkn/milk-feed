@@ -12,6 +12,7 @@ import {
   feedsOnDate,
   timeSinceLastFeed,
   formatTimeSince,
+  DEFAULT_ML_PER_MINUTE,
 } from "./feed";
 import type { FeedLog } from "./types";
 
@@ -61,6 +62,52 @@ describe("milkConsumed", () => {
   });
 });
 
+describe("milkConsumed (breast feeds)", () => {
+  it("returns actual milk for bottle feeds", () => {
+    const feed = makeFeed({
+      type: "bottle",
+      bottleSize: 120,
+      remainingMilk: 30,
+      estimatedMilk: 50,
+    });
+    expect(milkConsumed(feed, 10)).toBe(90);
+  });
+
+  it("returns the per-feed override for breast feeds", () => {
+    const feed = makeFeed({ type: "breast", duration: 600, estimatedMilk: 75 });
+    expect(milkConsumed(feed, 10)).toBe(75);
+  });
+
+  it("estimates from duration and ml/min when no override is set", () => {
+    const feed = makeFeed({ type: "breast", duration: 600 });
+    expect(milkConsumed(feed, 10)).toBe(100);
+  });
+
+  it("rounds the estimate to the nearest ml", () => {
+    const feed = makeFeed({ type: "breast", duration: 125 });
+    expect(milkConsumed(feed, 10)).toBe(21);
+  });
+
+  it("treats a zero or negative rate as zero", () => {
+    const feed = makeFeed({ type: "breast", duration: 600 });
+    expect(milkConsumed(feed, 0)).toBe(0);
+    expect(milkConsumed(feed, -5)).toBe(0);
+  });
+
+  it("treats an invalid override as zero", () => {
+    const feed = makeFeed({
+      type: "breast",
+      duration: 600,
+      estimatedMilk: Number.NaN,
+    });
+    expect(milkConsumed(feed, 10)).toBe(0);
+  });
+
+  it("exposes a default rate for the UI", () => {
+    expect(DEFAULT_ML_PER_MINUTE).toBeGreaterThan(0);
+  });
+});
+
 describe("generateFeedId", () => {
   it("returns a non-empty string", () => {
     expect(generateFeedId().length).toBeGreaterThan(0);
@@ -83,6 +130,14 @@ describe("totalMilk", () => {
 
   it("returns 0 for empty list", () => {
     expect(totalMilk([])).toBe(0);
+  });
+
+  it("includes estimated breast milk using the rate", () => {
+    const feeds = [
+      makeFeed({ bottleSize: 120, remainingMilk: 20 }),
+      makeFeed({ type: "breast", duration: 600 }),
+    ];
+    expect(totalMilk(feeds, 10)).toBe(200);
   });
 });
 
@@ -148,6 +203,20 @@ describe("applyFeedEdit", () => {
   it("updates remainingMilk as a number", () => {
     const feed = applyFeedEdit(base(), "remainingMilk", "30");
     expect(feed.remainingMilk).toBe(30);
+  });
+
+  it("updates estimatedMilk as a number", () => {
+    const feed = applyFeedEdit(base(), "estimatedMilk", "75");
+    expect(feed.estimatedMilk).toBe(75);
+  });
+
+  it("clears estimatedMilk when the value is empty", () => {
+    const feed = applyFeedEdit(
+      { ...base(), estimatedMilk: 75 },
+      "estimatedMilk",
+      "",
+    );
+    expect(feed.estimatedMilk).toBeUndefined();
   });
 
   it("updates type", () => {
