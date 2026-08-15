@@ -24,7 +24,9 @@
 	let timelineComponent: TimelineInterface;
 	let fileInput: HTMLInputElement;
 	let isMenuOpen = false;
-	let isDarkMode: Boolean = browser ? document.documentElement.classList.contains("dark") : false;
+	let isDarkMode: boolean = browser
+		? document.documentElement.classList.contains("dark")
+		: false;
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
@@ -97,9 +99,20 @@
 		timelineComponent.updateTimeline(previousFeeds);
 	}
 
+	function syncDarkModeState() {
+		isDarkMode = browser
+			? document.documentElement.classList.contains("dark")
+			: false;
+	}
+
 	function handleToggleLightDarkMode() {
 		toggleLightDarkMode();
-		isDarkMode = !isDarkMode;
+		syncDarkModeState();
+	}
+
+	function handleToggleNightVision() {
+		toggleNightVision();
+		syncDarkModeState();
 	}
 
 	onMount(() => {
@@ -118,6 +131,7 @@
 			});
 
 		restoreLightDarkModeFromLocalStorage();
+		syncDarkModeState();
 	});
 </script>
 
@@ -253,7 +267,7 @@
 					{/if}
 				</button>
 				<button
-					on:click={toggleNightVision}
+					on:click={handleToggleNightVision}
 					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
 					>night mode</button
 				>
