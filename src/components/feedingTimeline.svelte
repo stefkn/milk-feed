@@ -25,6 +25,10 @@
         }
 
         if (previousFeeds.length === 0) {
+            if (feedTimeline instanceof Chart) {
+                feedTimeline.destroy();
+                feedTimeline = undefined;
+            }
             return;
         }
 
