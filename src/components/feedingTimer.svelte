@@ -83,6 +83,7 @@
         };
         feedDurationSeconds = 0;
         _setStopWatchInterval();
+        persistActiveFeed();
     }
 
     function stopFeedingTimer() {
@@ -93,6 +94,8 @@
         }
         isFeeding = false;
         isPaused = false;
+
+        clearActiveFeed();
 
         updateFeedDuration();
 
@@ -136,6 +139,7 @@
             pauseStartedAt = Date.now();
             updateFeedDuration();
         }
+        persistActiveFeed();
     }
 
     /**
@@ -157,6 +161,61 @@
         remainingMilk = Math.round((bottleSize * percent) / 100);
     }
 
+    function persistActiveFeed() {
+        if (!isFeeding) {
+            return;
+        }
+        localforage
+            .setItem("activeFeed", {
+                isPaused,
+                feedStartTime,
+                pausedDurationMs,
+                pauseStartedAt,
+                feedType,
+                bottleSize,
+                remainingMilk,
+                feedDurationSeconds,
+            })
+            .catch(function (err) {
+                console.error(err);
+            });
+    }
+
+    function clearActiveFeed() {
+        localforage.removeItem("activeFeed").catch(function (err) {
+            console.error(err);
+        });
+    }
+
+    function restoreActiveFeed(state: any) {
+        if (!state || typeof state.isPaused !== "boolean") {
+            return;
+        }
+
+        isFeeding = true;
+        isPaused = state.isPaused;
+        feedStartTime = Number(state.feedStartTime) || Date.now();
+        pausedDurationMs = Number(state.pausedDurationMs) || 0;
+        pauseStartedAt =
+            state.pauseStartedAt !== undefined && state.pauseStartedAt !== null
+                ? Number(state.pauseStartedAt)
+                : undefined;
+        feedType = state.feedType === "breast" ? "breast" : "bottle";
+        bottleSize = Number(state.bottleSize) || 0;
+        remainingMilk = Number(state.remainingMilk) || 0;
+        feedDurationSeconds = Number(state.feedDurationSeconds) || 0;
+
+        currentFeed = {
+            start: new Date(feedStartTime),
+            end: new Date(feedStartTime + feedDurationSeconds * 1000),
+        };
+
+        if (!isPaused) {
+            updateFeedDuration();
+            _setStopWatchInterval();
+        }
+    }
+
     onMount(() => {
         updateCurrentTime();
         clockInterval = setInterval(updateCurrentTime, 1000);
@@ -166,6 +225,15 @@
             .then((value: any) => {
                 const parsed = Number(value);
                 bottleSize = Number.isFinite(parsed) ? parsed : 0;
+            })
+            .catch(function (err) {
+                console.error(err);
+            });
+
+        localforage
+            .getItem("activeFeed")
+            .then((value: any) => {
+                restoreActiveFeed(value);
             })
             .catch(function (err) {
                 console.error(err);
@@ -283,6 +351,7 @@
                     min="0"
                     max={bottleSize}
                     bind:value={remainingMilk}
+                    on:input={() => isFeeding && persistActiveFeed()}
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-md rounded-lg focus:ring-blue-600 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 />
                 <input
