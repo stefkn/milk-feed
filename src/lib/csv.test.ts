@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { feedsToCsv, csvToFeeds, mergeFeedsById, CSV_HEADERS } from "./csv";
+import {
+  feedsToCsv,
+  csvToFeeds,
+  mergeFeedsById,
+  csvToFeedsWithStats,
+  CSV_HEADERS,
+} from "./csv";
 import type { FeedLog } from "./types";
 
 function makeFeed(overrides: Partial<FeedLog> = {}): FeedLog {
@@ -118,6 +124,36 @@ describe("csvToFeeds", () => {
     ].join("\n");
     const [feed] = csvToFeeds(csv);
     expect(feed.feedId).toBeTruthy();
+  });
+});
+
+describe("csvToFeedsWithStats", () => {
+  it("counts skipped rows with unparseable dates", () => {
+    const csv = [
+      CSV_HEADERS.join(","),
+      "1,not-a-date,2024-01-01T12:45:45,900,120,30,,bottle",
+      "2,2024-01-01T12:30:45,2024-01-01T12:45:45,900,120,30,,bottle",
+    ].join("\n");
+    const { feeds, skipped } = csvToFeedsWithStats(csv);
+    expect(feeds).toHaveLength(1);
+    expect(feeds[0].feedId).toBe("2");
+    expect(skipped).toBe(1);
+  });
+
+  it("reports zero skipped for valid rows", () => {
+    const csv = [
+      CSV_HEADERS.join(","),
+      "1,2024-01-01T12:30:45,2024-01-01T12:45:45,900,120,30,,bottle",
+    ].join("\n");
+    const { feeds, skipped } = csvToFeedsWithStats(csv);
+    expect(feeds).toHaveLength(1);
+    expect(skipped).toBe(0);
+  });
+
+  it("returns an empty result for empty input", () => {
+    const { feeds, skipped } = csvToFeedsWithStats("");
+    expect(feeds).toEqual([]);
+    expect(skipped).toBe(0);
   });
 });
 

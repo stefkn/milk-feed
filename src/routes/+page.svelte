@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { browser } from "$app/environment";
 	import localforage from "localforage";
 	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
-	import { feedsToCsv, csvToFeeds, mergeFeedsById } from "../lib/csv";
+	import { feedsToCsv, csvToFeedsWithStats, mergeFeedsById } from "../lib/csv";
 	import { sortFeedsByStart } from "../lib/feed";
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
@@ -24,6 +24,8 @@
 	let timelineComponent: TimelineInterface;
 	let fileInput: HTMLInputElement;
 	let isMenuOpen = false;
+	let importStatus = "";
+	let importStatusTimeout: number | undefined;
 	let isDarkMode: boolean = browser
 		? document.documentElement.classList.contains("dark")
 		: false;
@@ -51,7 +53,11 @@
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
-		link.download = "milk-feed.csv";
+		const today = new Date();
+		const date = `${today.getFullYear()}-${String(
+			today.getMonth() + 1,
+		).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+		link.download = `milk-feed-${date}.csv`;
 		link.click();
 		URL.revokeObjectURL(url);
 	}
@@ -64,13 +70,19 @@
 			return;
 		}
 
-		previousFeeds = sortFeedsByStart(
-			mergeFeedsById(previousFeeds, csvToFeeds(await file.text())),
-		);
+		const { feeds, skipped } = csvToFeedsWithStats(await file.text());
+		previousFeeds = sortFeedsByStart(mergeFeedsById(previousFeeds, feeds));
 		persistFeeds();
 		feedingChartComponent.updateFeedChart(previousFeeds);
 		timelineComponent.updateTimeline(previousFeeds);
 		input.value = "";
+
+		const skippedNote = skipped > 0 ? ` (${skipped} skipped)` : "";
+		importStatus = `Imported ${feeds.length} feeds${skippedNote}.`;
+		window.clearTimeout(importStatusTimeout);
+		importStatusTimeout = window.setTimeout(() => {
+			importStatus = "";
+		}, 4000);
 	}
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
@@ -130,6 +142,10 @@
 
 		restoreLightDarkModeFromLocalStorage();
 		syncDarkModeState();
+	});
+
+	onDestroy(() => {
+		window.clearTimeout(importStatusTimeout);
 	});
 </script>
 
@@ -273,6 +289,15 @@
 		</div>
 
 		<FeedingTimer on:newfeedfinished={handleNewFeedFinished} />
+
+		{#if importStatus}
+			<div
+				role="status"
+				class="max-w-xl m-auto mt-2 px-4 py-2 text-sm text-emerald-700 bg-emerald-100 border border-emerald-300 rounded-lg dark:text-emerald-200 dark:bg-emerald-900 dark:border-emerald-700"
+			>
+				{importStatus}
+			</div>
+		{/if}
 
 		<FeedingTimeline {previousFeeds} bind:this={timelineComponent} />
 
