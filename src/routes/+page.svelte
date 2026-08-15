@@ -107,9 +107,7 @@
 			.getItem("previousFeeds")
 			.then((value) => {
 				if (value instanceof Array) {
-					previousFeeds = sortFeedsByStart(
-						value.filter((feed) => feed.duration > 0),
-					);
+					previousFeeds = sortFeedsByStart(value);
 				}
 			})
 			.then(() => {
