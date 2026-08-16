@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   defaultTimelineRange,
   nightPeriodsInRange,
+  dayPeriodsInRange,
   DEFAULT_NIGHT_START_HOUR,
   DEFAULT_NIGHT_END_HOUR,
 } from "./timeline";
@@ -116,5 +117,39 @@ describe("nightPeriodsInRange", () => {
   it("exposes default night hours", () => {
     expect(DEFAULT_NIGHT_START_HOUR).toBe(20);
     expect(DEFAULT_NIGHT_END_HOUR).toBe(6);
+  });
+});
+
+describe("dayPeriodsInRange", () => {
+  it("returns the day period for a single day", () => {
+    const min = new Date("2024-01-01T00:00:00").getTime();
+    const max = new Date("2024-01-02T00:00:00").getTime();
+    expect(dayPeriodsInRange(min, max)).toEqual([
+      [
+        new Date("2024-01-01T06:00:00").getTime(),
+        new Date("2024-01-01T20:00:00").getTime(),
+      ],
+    ]);
+  });
+
+  it("returns multiple day periods across days", () => {
+    const min = new Date("2024-01-01T00:00:00").getTime();
+    const max = new Date("2024-01-03T00:00:00").getTime();
+    const periods = dayPeriodsInRange(min, max);
+    expect(periods).toHaveLength(2);
+    expect(periods[0][0]).toBe(new Date("2024-01-01T06:00:00").getTime());
+    expect(periods[1][0]).toBe(new Date("2024-01-02T06:00:00").getTime());
+  });
+
+  it("returns no periods during the night", () => {
+    const min = new Date("2024-01-01T22:00:00").getTime();
+    const max = new Date("2024-01-02T02:00:00").getTime();
+    expect(dayPeriodsInRange(min, max)).toEqual([]);
+  });
+
+  it("clamps the day to the requested range", () => {
+    const min = new Date("2024-01-01T08:00:00").getTime();
+    const max = new Date("2024-01-01T10:00:00").getTime();
+    expect(dayPeriodsInRange(min, max)).toEqual([[min, max]]);
   });
 });

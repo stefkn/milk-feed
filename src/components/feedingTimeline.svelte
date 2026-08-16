@@ -10,13 +10,64 @@
     import {
         defaultTimelineRange,
         nightPeriodsInRange,
+        dayPeriodsInRange,
     } from "../lib/timeline";
 
     export let previousFeeds: FeedLog[] = [];
     let feedTimeline: Chart | undefined = undefined;
 
-    const nightShadePlugin = {
-        id: "nightShade",
+    const ICON_RADIUS = 5;
+    const ICON_INSET = 8;
+    const ICON_Y_OFFSET = 12;
+
+    function drawMoon(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        r: number,
+        color: string,
+    ) {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.arc(x + r * 0.5, y - r * 0.2, r * 0.8, 0, Math.PI * 2);
+        ctx.fill("evenodd");
+        ctx.restore();
+    }
+
+    function drawSun(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        r: number,
+        color: string,
+    ) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = r * 0.35;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            ctx.moveTo(
+                x + Math.cos(angle) * r * 0.9,
+                y + Math.sin(angle) * r * 0.9,
+            );
+            ctx.lineTo(
+                x + Math.cos(angle) * r * 1.6,
+                y + Math.sin(angle) * r * 1.6,
+            );
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.85, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    const timelineDecorationsPlugin = {
+        id: "timelineDecorations",
         beforeDatasetsDraw(chart: Chart) {
             const xScale = chart.scales.x;
             if (!xScale) {
@@ -51,6 +102,48 @@
                     x2 - x1,
                     chartArea.bottom - chartArea.top,
                 );
+            }
+            ctx.restore();
+        },
+        afterDatasetsDraw(chart: Chart) {
+            const xScale = chart.scales.x;
+            if (!xScale) {
+                return;
+            }
+            const min = xScale.min;
+            const max = xScale.max;
+            if (min === undefined || max === undefined) {
+                return;
+            }
+
+            const nights = nightPeriodsInRange(min, max);
+            const days = dayPeriodsInRange(min, max);
+
+            const { ctx, chartArea } = chart;
+            const isDark =
+                typeof document !== "undefined" &&
+                document.documentElement.classList.contains("dark");
+
+            const moonColor = isDark
+                ? "rgba(226, 232, 240, 0.95)"
+                : "rgba(71, 85, 105, 0.95)";
+            const sunColor = "rgba(245, 158, 11, 0.95)";
+
+            const iconY = chartArea.top + ICON_Y_OFFSET;
+            const iconX = (timeMs: number) => {
+                const px = xScale.getPixelForValue(timeMs) + ICON_INSET;
+                return Math.max(
+                    chartArea.left + ICON_RADIUS + 2,
+                    Math.min(chartArea.right - ICON_RADIUS - 2, px),
+                );
+            };
+
+            ctx.save();
+            for (const [start] of nights) {
+                drawMoon(ctx, iconX(start), iconY, ICON_RADIUS, moonColor);
+            }
+            for (const [start] of days) {
+                drawSun(ctx, iconX(start), iconY, ICON_RADIUS, sunColor);
             }
             ctx.restore();
         },
@@ -190,7 +283,7 @@
                     },
                 },
             },
-            plugins: [nightShadePlugin],
+            plugins: [timelineDecorationsPlugin],
         });
     }
 

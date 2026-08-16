@@ -62,3 +62,36 @@ export function nightPeriodsInRange(
 
   return periods;
 }
+
+export function dayPeriodsInRange(
+  minMs: number,
+  maxMs: number,
+  nightStartHour: number = DEFAULT_NIGHT_START_HOUR,
+  nightEndHour: number = DEFAULT_NIGHT_END_HOUR,
+): Array<[number, number]> {
+  const periods: Array<[number, number]> = [];
+
+  const firstDay = new Date(minMs);
+  firstDay.setHours(0, 0, 0, 0);
+  const lastDay = new Date(maxMs);
+  lastDay.setHours(0, 0, 0, 0);
+
+  for (
+    const day = new Date(firstDay);
+    day.getTime() <= lastDay.getTime();
+    day.setDate(day.getDate() + 1)
+  ) {
+    const dayStart = new Date(day);
+    dayStart.setHours(nightEndHour, 0, 0, 0);
+    const dayEnd = new Date(day);
+    dayEnd.setHours(nightStartHour, 0, 0, 0);
+
+    const start = Math.max(minMs, dayStart.getTime());
+    const end = Math.min(maxMs, dayEnd.getTime());
+    if (end > start) {
+      periods.push([start, end]);
+    }
+  }
+
+  return periods;
+}
