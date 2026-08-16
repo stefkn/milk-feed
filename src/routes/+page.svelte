@@ -5,11 +5,21 @@
 	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
 	import { feedsToCsv, csvToFeedsWithStats, mergeFeedsById } from "../lib/csv";
 	import { sortFeedsByStart } from "../lib/feed";
+	import { activeFeeds, mergeFeedsLWW, stampFeed } from "../lib/sync";
+	import type { SyncMessage } from "../lib/sync";
+	import {
+		createSession,
+		joinSession as joinPeerSession,
+		type SessionHandle,
+		type SessionStatus,
+	} from "../lib/session";
+	import { isValidSessionCode } from "../lib/sessionCode";
 
 	import PreviousFeedsList from "../components/previousFeedsList.svelte";
 	import FeedingTimer from "../components/feedingTimer.svelte";
 	import FeedingChart from "../components/feedingChart.svelte";
 	import FeedingTimeline from "../components/feedingTimeline.svelte";
+	import SessionPanel from "../components/sessionPanel.svelte";
 
 	import "../app.css";
 	import {
@@ -30,6 +40,14 @@
 		? document.documentElement.classList.contains("dark")
 		: false;
 
+	let session: SessionHandle | null = null;
+	let sessionStatus: SessionStatus = "disconnected";
+	let sessionCode = "";
+	let sessionError = "";
+	let isHost = false;
+
+	$: activeFeedsList = activeFeeds(previousFeeds);
+
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
 	}
@@ -42,12 +60,31 @@
 			});
 	}
 
+	function broadcastFeeds() {
+		session?.send({ type: "feeds", feeds: previousFeeds });
+	}
+
+	function refreshComponents() {
+		const active = activeFeeds(previousFeeds);
+		feedingChartComponent?.updateFeedChart(active);
+		timelineComponent?.updateTimeline(active);
+	}
+
+	function applyFeeds(next: FeedLog[], broadcast = true) {
+		previousFeeds = sortFeedsByStart(next);
+		persistFeeds();
+		if (broadcast) {
+			broadcastFeeds();
+		}
+		refreshComponents();
+	}
+
 	function handleExportCsv() {
 		if (!browser) {
 			return;
 		}
 
-		const blob = new Blob([feedsToCsv(previousFeeds)], {
+		const blob = new Blob([feedsToCsv(activeFeeds(previousFeeds))], {
 			type: "text/csv;charset=utf-8;",
 		});
 		const url = URL.createObjectURL(blob);
@@ -71,10 +108,11 @@
 		}
 
 		const { feeds, skipped } = csvToFeedsWithStats(await file.text());
-		previousFeeds = sortFeedsByStart(mergeFeedsById(previousFeeds, feeds));
+		const imported = feeds.map((feed) => stampFeed(feed));
+		previousFeeds = sortFeedsByStart(mergeFeedsById(previousFeeds, imported));
 		persistFeeds();
-		feedingChartComponent.updateFeedChart(previousFeeds);
-		timelineComponent.updateTimeline(previousFeeds);
+		broadcastFeeds();
+		refreshComponents();
 		input.value = "";
 
 		const skippedNote = skipped > 0 ? ` (${skipped} skipped)` : "";
@@ -86,29 +124,11 @@
 	}
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
-		previousFeeds = sortFeedsByStart([...previousFeeds, event.detail]);
-
-		localforage
-			.setItem("previousFeeds", previousFeeds)
-			.catch(function (err) {
-				console.error(err);
-			});
-
-		feedingChartComponent.updateFeedChart(previousFeeds);
-		timelineComponent.updateTimeline(previousFeeds);
+		applyFeeds([...previousFeeds, stampFeed(event.detail)]);
 	}
 
 	function updatePreviousFeeds(event: CustomEvent<FeedLog[]>) {
-		previousFeeds = sortFeedsByStart(event.detail);
-
-		localforage
-			.setItem("previousFeeds", previousFeeds)
-			.catch(function (err) {
-				console.error(err);
-			});
-
-		feedingChartComponent.updateFeedChart(previousFeeds);
-		timelineComponent.updateTimeline(previousFeeds);
+		applyFeeds(event.detail);
 	}
 
 	function syncDarkModeState() {
@@ -127,25 +147,137 @@
 		syncDarkModeState();
 	}
 
-	onMount(() => {
-		localforage
-			.getItem("previousFeeds")
-			.then((value) => {
-				if (value instanceof Array) {
-					previousFeeds = sortFeedsByStart(value);
-				}
-			})
-			.then(() => {
-				feedingChartComponent.updateFeedChart(previousFeeds);
-				timelineComponent.updateTimeline(previousFeeds);
+	function handleSessionStatus(status: SessionStatus) {
+		sessionStatus = status;
+		if (status === "connected") {
+			broadcastFeeds();
+		}
+	}
+
+	function handleSessionMessage(message: SyncMessage) {
+		if (message.type !== "feeds") {
+			return;
+		}
+		const merged = mergeFeedsLWW(previousFeeds, message.feeds);
+		applyFeeds(merged, false);
+	}
+
+	function sessionCallbacks() {
+		return {
+			onStatus: handleSessionStatus,
+			onMessage: handleSessionMessage,
+			onError: (message: string) => {
+				sessionError = message;
+			},
+		};
+	}
+
+	async function teardownSession() {
+		session?.close();
+		session = null;
+		sessionStatus = "disconnected";
+		sessionCode = "";
+		sessionError = "";
+		isHost = false;
+	}
+
+	function persistSessionRole() {
+		if (sessionCode) {
+			localforage
+				.setItem("sessionRole", { code: sessionCode, isHost })
+				.catch(function (err) {
+					console.error(err);
+				});
+		} else {
+			localforage.removeItem("sessionRole").catch(function (err) {
+				console.error(err);
 			});
+		}
+	}
+
+	async function startSession() {
+		await teardownSession();
+		try {
+			session = await createSession(sessionCallbacks());
+		} catch (err) {
+			console.error("Failed to start session", err);
+			sessionError = "Could not start a session. Please try again.";
+			return;
+		}
+		sessionCode = session.code;
+		isHost = session.isHost;
+		persistSessionRole();
+	}
+
+	async function joinSession(code: string) {
+		if (!isValidSessionCode(code)) {
+			sessionError = "That session phrase looks wrong. Check it and try again.";
+			return;
+		}
+		await teardownSession();
+		try {
+			session = await joinPeerSession(code, sessionCallbacks());
+		} catch (err) {
+			console.error("Failed to join session", err);
+			sessionError = "Could not join the session. Please try again.";
+			return;
+		}
+		sessionCode = session.code;
+		isHost = session.isHost;
+		persistSessionRole();
+	}
+
+	async function disconnectSession() {
+		await teardownSession();
+		persistSessionRole();
+	}
+
+	async function restoreSession() {
+		const joinCode = browser
+			? new URLSearchParams(window.location.search).get("session")
+			: null;
+
+		if (joinCode) {
+			await joinSession(joinCode.trim().toLowerCase());
+			return;
+		}
+
+		const saved = await localforage.getItem("sessionRole");
+		if (!saved || typeof saved !== "object") {
+			return;
+		}
+		const { code, isHost: host } = saved as { code: string; isHost: boolean };
+		if (!code) {
+			return;
+		}
+		try {
+			session = host
+				? await createSession(sessionCallbacks(), code)
+				: await joinPeerSession(code, sessionCallbacks());
+		} catch (err) {
+			console.error("Failed to restore session", err);
+			return;
+		}
+		sessionCode = session.code;
+		isHost = session.isHost;
+	}
+
+	onMount(async () => {
+		const stored = await localforage.getItem("previousFeeds");
+		if (stored instanceof Array) {
+			previousFeeds = sortFeedsByStart(stored);
+		}
+		refreshComponents();
 
 		restoreLightDarkModeFromLocalStorage();
 		syncDarkModeState();
+
+		await restoreSession();
 	});
 
 	onDestroy(() => {
 		clearTimeout(importStatusTimeout);
+		session?.close();
 	});
 </script>
 
@@ -288,7 +420,17 @@
 			</div>
 		</div>
 
-		<FeedingTimer {previousFeeds} on:newfeedfinished={handleNewFeedFinished} />
+		<SessionPanel
+			status={sessionStatus}
+			code={sessionCode}
+			isHost={isHost}
+			error={sessionError}
+			on:start={() => startSession()}
+			on:join={(e) => joinSession(e.detail)}
+			on:disconnect={() => disconnectSession()}
+		/>
+
+		<FeedingTimer previousFeeds={activeFeedsList} on:newfeedfinished={handleNewFeedFinished} />
 
 		{#if importStatus}
 			<div
@@ -299,9 +441,9 @@
 			</div>
 		{/if}
 
-		<FeedingTimeline {previousFeeds} bind:this={timelineComponent} />
+		<FeedingTimeline previousFeeds={activeFeedsList} bind:this={timelineComponent} />
 
-		<FeedingChart {previousFeeds} bind:this={feedingChartComponent} />
+		<FeedingChart previousFeeds={activeFeedsList} bind:this={feedingChartComponent} />
 
 		<div>
 			<h2 class="mt-4 text-xl max-w-xl m-auto">Previous Feeds</h2>

@@ -238,8 +238,11 @@ describe("applyFeedEdit", () => {
     expect(feed.duration).toBe(0);
   });
 
-  it("leaves unknown fields unchanged", () => {
-    expect(applyFeedEdit(base(), "unknown", "x")).toEqual(base());
+  it("leaves unknown fields unchanged but stamps updatedAt", () => {
+    const edited = applyFeedEdit(base(), "unknown", "x");
+    const { updatedAt, ...rest } = edited;
+    expect(rest).toEqual(base());
+    expect(updatedAt).toBeGreaterThan(0);
   });
 });
 
