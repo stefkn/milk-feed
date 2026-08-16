@@ -5,15 +5,12 @@
     import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
     import { Chart } from "chart.js/auto";
-    import zoomPlugin from "chartjs-plugin-zoom";
     import "chartjs-adapter-date-fns";
     import { milkConsumed, mlPerMinute } from "../lib/feed";
     import {
         defaultTimelineRange,
         nightPeriodsInRange,
     } from "../lib/timeline";
-
-    Chart.register(zoomPlugin);
 
     export let previousFeeds: FeedLog[] = [];
     let feedTimeline: Chart | undefined = undefined;
@@ -69,6 +66,9 @@
         }
 
         await tick();
+
+        const { default: zoomPlugin } = await import("chartjs-plugin-zoom");
+        Chart.register(zoomPlugin);
 
         const rate = get(mlPerMinute);
 
@@ -191,6 +191,12 @@
         });
     }
 
+    function resetTimelineView() {
+        if (feedTimeline) {
+            (feedTimeline as unknown as { resetZoom: () => void }).resetZoom();
+        }
+    }
+
     onMount(() => {
         return mlPerMinute.subscribe(() => {
             updateTimeline(previousFeeds);
@@ -206,7 +212,7 @@
         {:else}
             <canvas id="timelineChart"></canvas>
             <button
-                on:click={() => feedTimeline?.resetZoom()}
+                on:click={resetTimelineView}
                 class="mt-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
                 >Reset view</button
             >
