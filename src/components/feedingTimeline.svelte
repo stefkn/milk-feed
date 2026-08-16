@@ -161,9 +161,6 @@
                             enabled: true,
                             mode: "x",
                         },
-                        limits: {
-                            x: { min: "original", max: "original" },
-                        },
                     },
                     tooltip: {
                         callbacks: {
