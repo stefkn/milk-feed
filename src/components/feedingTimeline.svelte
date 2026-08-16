@@ -11,6 +11,7 @@
         defaultTimelineRange,
         nightPeriodsInRange,
         dayPeriodsInRange,
+        clampRangeToMax,
     } from "../lib/timeline";
 
     export let previousFeeds: FeedLog[] = [];
@@ -287,6 +288,24 @@
                             wheel: { enabled: true },
                             pinch: { enabled: true },
                             mode: "x",
+                            onZoom: ({ chart }: { chart: Chart }) => {
+                                const xScale = chart.scales.x;
+                                if (!xScale) {
+                                    return;
+                                }
+                                const min = xScale.min;
+                                const max = xScale.max;
+                                if (min === undefined || max === undefined) {
+                                    return;
+                                }
+                                const clamped = clampRangeToMax(min, max);
+                                if (clamped.min === min && clamped.max === max) {
+                                    return;
+                                }
+                                xScale.options.min = clamped.min;
+                                xScale.options.max = clamped.max;
+                                chart.update("none");
+                            },
                         },
                         pan: {
                             enabled: true,

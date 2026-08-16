@@ -3,6 +3,8 @@ import {
   defaultTimelineRange,
   nightPeriodsInRange,
   dayPeriodsInRange,
+  clampRangeToMax,
+  MAX_TIMELINE_RANGE_MS,
   DEFAULT_NIGHT_START_HOUR,
   DEFAULT_NIGHT_END_HOUR,
 } from "./timeline";
@@ -151,5 +153,29 @@ describe("dayPeriodsInRange", () => {
     const min = new Date("2024-01-01T08:00:00").getTime();
     const max = new Date("2024-01-01T10:00:00").getTime();
     expect(dayPeriodsInRange(min, max)).toEqual([[min, max]]);
+  });
+});
+
+describe("clampRangeToMax", () => {
+  it("leaves a range within the limit unchanged", () => {
+    const min = new Date("2024-01-01T00:00:00").getTime();
+    const max = new Date("2024-01-03T00:00:00").getTime();
+    expect(clampRangeToMax(min, max, 5 * 24 * 60 * 60 * 1000)).toEqual({
+      min,
+      max,
+    });
+  });
+
+  it("clamps an oversized range to the limit, keeping the center", () => {
+    const min = new Date("2024-01-01T00:00:00").getTime();
+    const max = new Date("2024-01-10T00:00:00").getTime();
+    const clamped = clampRangeToMax(min, max, 5 * 24 * 60 * 60 * 1000);
+    const center = (min + max) / 2;
+    const half = (5 * 24 * 60 * 60 * 1000) / 2;
+    expect(clamped).toEqual({ min: center - half, max: center + half });
+  });
+
+  it("exposes a five-day default limit", () => {
+    expect(MAX_TIMELINE_RANGE_MS).toBe(5 * 24 * 60 * 60 * 1000);
   });
 });
