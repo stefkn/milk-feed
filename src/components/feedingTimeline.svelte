@@ -218,7 +218,6 @@
             data: {
                 datasets: [
                     {
-                        label: "feeding",
                         data: previousFeeds.map((_, index) => ({
                             x: [startMs[index], endMs[index]] as [
                                 number,
@@ -283,6 +282,9 @@
                     },
                 },
                 plugins: {
+                    legend: {
+                        display: false,
+                    },
                     zoom: {
                         zoom: {
                             wheel: { enabled: true },

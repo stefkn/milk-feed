@@ -3,7 +3,7 @@ import type { FeedLog } from "./types";
 export const DEFAULT_NIGHT_START_HOUR = 20;
 export const DEFAULT_NIGHT_END_HOUR = 6;
 
-export const MAX_TIMELINE_RANGE_MS = 5 * 24 * 60 * 60 * 1000;
+export const MAX_TIMELINE_RANGE_MS = 4 * 24 * 60 * 60 * 1000;
 
 const RIGHT_MARGIN_MS = 5 * 60 * 1000;
 const MIN_PADDING_MS = 30 * 60 * 1000;
