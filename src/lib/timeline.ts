@@ -36,7 +36,9 @@ export function defaultTimelineRange(
   const dataMax = Math.max(nowMs, ...ends);
   const span = dataMax - dataMin;
   const padding = Math.max(span * 0.2, MIN_PADDING_MS);
-  return { min: dataMin - padding, max: dataMax + RIGHT_MARGIN_MS };
+  const max = dataMax + RIGHT_MARGIN_MS;
+  const min = Math.max(dataMin - padding, max - MAX_TIMELINE_RANGE_MS);
+  return { min, max };
 }
 
 export function nightPeriodsInRange(

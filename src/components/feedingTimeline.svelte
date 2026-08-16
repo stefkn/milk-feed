@@ -1,3 +1,7 @@
+<script context="module" lang="ts">
+    let zoomRegistered = false;
+</script>
+
 <script lang="ts">
     import { tick, onMount } from "svelte";
     import { get } from "svelte/store";
@@ -176,13 +180,22 @@
         }
 
         if (previousFeeds.length === 0) {
+            if (feedTimeline instanceof Chart) {
+                feedTimeline.destroy();
+                feedTimeline = undefined;
+            }
             return;
         }
 
         await tick();
 
-        const { default: zoomPlugin } = await import("chartjs-plugin-zoom");
-        Chart.register(zoomPlugin);
+        if (!zoomRegistered) {
+            const { default: zoomPlugin } = await import(
+                "chartjs-plugin-zoom"
+            );
+            Chart.register(zoomPlugin);
+            zoomRegistered = true;
+        }
 
         const rate = get(mlPerMinute);
 

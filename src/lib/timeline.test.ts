@@ -54,6 +54,20 @@ describe("defaultTimelineRange", () => {
     // The feed is at 10:00, so the left bound is well after midnight.
     expect(range.min).toBeGreaterThan(new Date("2024-01-01T00:00:00").getTime());
   });
+
+  it("caps the range at four days for older feeds", () => {
+    const now = new Date("2024-01-10T12:00:00").getTime();
+    const feeds = [
+      makeFeed({
+        start: new Date("2024-01-01T10:00:00"),
+        end: new Date("2024-01-01T10:10:00"),
+      }),
+    ];
+    const range = defaultTimelineRange(feeds, now);
+    const max = now + 5 * 60 * 1000;
+    expect(range.max).toBe(max);
+    expect(range.min).toBe(max - MAX_TIMELINE_RANGE_MS);
+  });
 });
 
 describe("nightPeriodsInRange", () => {
