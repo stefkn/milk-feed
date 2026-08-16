@@ -1,23 +1,178 @@
+<script context="module" lang="ts">
+    let zoomRegistered = false;
+</script>
+
 <script lang="ts">
     import { tick, onMount } from "svelte";
     import { get } from "svelte/store";
     import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
-    import { format, parse } from "@formkit/tempo";
+    import { format } from "@formkit/tempo";
     import { Chart } from "chart.js/auto";
     import "chartjs-adapter-date-fns";
     import { milkConsumed, mlPerMinute } from "../lib/feed";
+    import {
+        defaultTimelineRange,
+        nightPeriodsInRange,
+        dayPeriodsInRange,
+        clampRangeToMax,
+    } from "../lib/timeline";
 
     export let previousFeeds: FeedLog[] = [];
     let feedTimeline: Chart | undefined = undefined;
 
-    interface ChartInterface {
-        x: Date[];
-        y: number;
-        fedMilk: number;
-        start: string;
-        end: string;
+    const ICON_RADIUS = 5;
+    const ICON_INSET = 8;
+    const ICON_Y_OFFSET = 12;
+
+    const BOTTLE_COLOR = "rgba(16, 185, 129, 0.85)";
+    const BREAST_COLOR = "rgba(168, 85, 247, 0.85)";
+
+    function drawMoon(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        r: number,
+        color: string,
+    ) {
+        const size = Math.ceil(r * 3);
+        const off = document.createElement("canvas");
+        off.width = size;
+        off.height = size;
+        const octx = off.getContext("2d");
+        if (!octx) {
+            return;
+        }
+
+        const cx = size / 2;
+        const cy = size / 2;
+
+        octx.fillStyle = color;
+        octx.beginPath();
+        octx.arc(cx, cy, r, 0, Math.PI * 2);
+        octx.fill();
+
+        octx.globalCompositeOperation = "destination-out";
+        octx.fillStyle = "rgba(0, 0, 0, 1)";
+        octx.beginPath();
+        octx.arc(cx + r * 0.55, cy - r * 0.15, r * 0.85, 0, Math.PI * 2);
+        octx.fill();
+
+        ctx.drawImage(off, x - cx, y - cy);
     }
+
+    function drawSun(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        r: number,
+        color: string,
+    ) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = r * 0.35;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            ctx.moveTo(
+                x + Math.cos(angle) * r * 0.9,
+                y + Math.sin(angle) * r * 0.9,
+            );
+            ctx.lineTo(
+                x + Math.cos(angle) * r * 1.6,
+                y + Math.sin(angle) * r * 1.6,
+            );
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.85, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    const timelineDecorationsPlugin = {
+        id: "timelineDecorations",
+        beforeDatasetsDraw(chart: Chart) {
+            const xScale = chart.scales.x;
+            if (!xScale) {
+                return;
+            }
+            const min = xScale.min;
+            const max = xScale.max;
+            if (min === undefined || max === undefined) {
+                return;
+            }
+
+            const periods = nightPeriodsInRange(min, max);
+            if (periods.length === 0) {
+                return;
+            }
+
+            const { ctx, chartArea } = chart;
+            const isDark =
+                typeof document !== "undefined" &&
+                document.documentElement.classList.contains("dark");
+
+            ctx.save();
+            ctx.fillStyle = isDark
+                ? "rgba(255, 255, 255, 0.06)"
+                : "rgba(0, 0, 0, 0.06)";
+            for (const [start, end] of periods) {
+                const x1 = xScale.getPixelForValue(start);
+                const x2 = xScale.getPixelForValue(end);
+                ctx.fillRect(
+                    x1,
+                    chartArea.top,
+                    x2 - x1,
+                    chartArea.bottom - chartArea.top,
+                );
+            }
+            ctx.restore();
+        },
+        afterDatasetsDraw(chart: Chart) {
+            const xScale = chart.scales.x;
+            if (!xScale) {
+                return;
+            }
+            const min = xScale.min;
+            const max = xScale.max;
+            if (min === undefined || max === undefined) {
+                return;
+            }
+
+            const nights = nightPeriodsInRange(min, max);
+            const days = dayPeriodsInRange(min, max);
+
+            const { ctx, chartArea } = chart;
+            const isDark =
+                typeof document !== "undefined" &&
+                document.documentElement.classList.contains("dark");
+
+            const moonColor = isDark
+                ? "rgba(226, 232, 240, 0.95)"
+                : "rgba(71, 85, 105, 0.95)";
+            const sunColor = "rgba(245, 158, 11, 0.95)";
+
+            const iconY = chartArea.top + ICON_Y_OFFSET;
+            const iconX = (timeMs: number) => {
+                const px = xScale.getPixelForValue(timeMs) + ICON_INSET;
+                return Math.max(
+                    chartArea.left + ICON_RADIUS + 2,
+                    Math.min(chartArea.right - ICON_RADIUS - 2, px),
+                );
+            };
+
+            ctx.save();
+            for (const [start] of nights) {
+                drawMoon(ctx, iconX(start), iconY, ICON_RADIUS, moonColor);
+            }
+            for (const [start] of days) {
+                drawSun(ctx, iconX(start), iconY, ICON_RADIUS, sunColor);
+            }
+            ctx.restore();
+        },
+    };
 
     export async function updateTimeline(previousFeeds: FeedLog[]) {
         if (!browser) {
@@ -34,7 +189,24 @@
 
         await tick();
 
+        if (!zoomRegistered) {
+            const { default: zoomPlugin } = await import(
+                "chartjs-plugin-zoom"
+            );
+            Chart.register(zoomPlugin);
+            zoomRegistered = true;
+        }
+
         const rate = get(mlPerMinute);
+
+        const startMs = previousFeeds.map((feed) =>
+            new Date(feed.start).getTime(),
+        );
+        const endMs = previousFeeds.map((feed) =>
+            new Date(feed.end).getTime(),
+        );
+
+        const range = defaultTimelineRange(previousFeeds);
 
         const canvas = document.getElementById(
             "timelineChart",
@@ -59,33 +231,35 @@
             data: {
                 datasets: [
                     {
-                        label: "feeding",
-                        data: previousFeeds.map((feed, index) => {
-                            return {
-                                x: [feed.start, feed.end],
-                                y: 0,
-                                fedMilk: milkConsumed(feed, rate),
-                                start: format(feed.start, "HH:mm"),
-                                end: format(feed.end, "HH:mm"),
-                            }
-                        }),
+                        data: previousFeeds.map((_, index) => ({
+                            x: [startMs[index], endMs[index]] as [
+                                number,
+                                number,
+                            ],
+                            y: 0,
+                        })) as any,
+                        backgroundColor: previousFeeds.map((feed) =>
+                            feed.type === "breast"
+                                ? BREAST_COLOR
+                                : BOTTLE_COLOR,
+                        ),
+                        borderColor: previousFeeds.map((feed) =>
+                            feed.type === "breast"
+                                ? BREAST_COLOR
+                                : BOTTLE_COLOR,
+                        ),
+                        borderWidth: 1,
                     },
                 ],
             },
             options: {
                 indexAxis: "y" as const,
                 responsive: true,
+                animation: false,
                 scales: {
                     x: {
-                        min: Math.min(
-                            ...previousFeeds.map((feed) =>
-                                parse(
-                                    format(feed.start, "full"),
-                                    "full",
-                                ).getTime(),
-                            ),
-                        ),
-                        max: Date.now(),
+                        min: range.min,
+                        max: range.max,
                         ticks: {
                             autoSkip: true,
                             maxTicksLimit: 4,
@@ -109,37 +283,80 @@
                     },
                     y: {
                         stacked: true,
+                        ticks: {
+                            display: false,
+                        },
+                        grid: {
+                            color: "gray",
+                        },
                         border: {
                             color: "gray",
                         },
                     },
                 },
                 plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: "x",
+                            onZoom: ({ chart }: { chart: Chart }) => {
+                                const xScale = chart.scales.x;
+                                if (!xScale) {
+                                    return;
+                                }
+                                const min = xScale.min;
+                                const max = xScale.max;
+                                if (min === undefined || max === undefined) {
+                                    return;
+                                }
+                                const clamped = clampRangeToMax(min, max);
+                                if (clamped.min === min && clamped.max === max) {
+                                    return;
+                                }
+                                xScale.options.min = clamped.min;
+                                xScale.options.max = clamped.max;
+                                chart.update("none");
+                            },
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: "x",
+                        },
+                    },
                     tooltip: {
                         callbacks: {
                             title: () => "",
                             label: (item) => {
-                                const data = item.dataset.data[item.dataIndex] as ChartInterface
-                                if (!data) {
+                                const feed = previousFeeds[item.dataIndex];
+                                if (!feed) {
                                     return "";
                                 }
                                 return (
                                     " fed " +
-                                    data.fedMilk +
+                                    milkConsumed(feed, rate) +
                                     "ml" +
                                     " from " +
-                                    data.start +
+                                    format(feed.start, "HH:mm") +
                                     " to " +
-                                    data.end
+                                    format(feed.end, "HH:mm")
                                 );
                             },
                         },
                     },
                 },
             },
+            plugins: [timelineDecorationsPlugin],
         });
+    }
 
-        return () => {};
+    function resetTimelineView() {
+        if (feedTimeline) {
+            (feedTimeline as unknown as { resetZoom: () => void }).resetZoom();
+        }
     }
 
     onMount(() => {
@@ -156,6 +373,29 @@
             <p>No feeds yet.</p>
         {:else}
             <canvas id="timelineChart"></canvas>
+            <div class="flex items-center justify-between mt-2">
+                <div class="flex gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <span class="flex items-center gap-1">
+                        <span
+                            class="inline-block w-3 h-3 rounded-sm"
+                            style="background-color: {BOTTLE_COLOR}"
+                        ></span>
+                        Bottle
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span
+                            class="inline-block w-3 h-3 rounded-sm"
+                            style="background-color: {BREAST_COLOR}"
+                        ></span>
+                        Breast
+                    </span>
+                </div>
+                <button
+                    on:click={resetTimelineView}
+                    class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                    >Reset view</button
+                >
+            </div>
         {/if}
     </div>
 </div>
