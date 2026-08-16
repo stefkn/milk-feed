@@ -104,10 +104,12 @@ function toNumber(value: string, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function csvToFeeds(text: string): FeedLog[] {
+export function csvToFeedsWithStats(
+  text: string,
+): { feeds: FeedLog[]; skipped: number } {
   const rows = parseCsv(text.replace(/^\uFEFF/, ""));
   if (rows.length === 0) {
-    return [];
+    return { feeds: [], skipped: 0 };
   }
 
   const header = rows[0];
@@ -124,6 +126,7 @@ export function csvToFeeds(text: string): FeedLog[] {
   const typeIdx = columnIndex("type");
 
   const feeds: FeedLog[] = [];
+  let skipped = 0;
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
@@ -146,11 +149,15 @@ export function csvToFeeds(text: string): FeedLog[] {
         type: cell(row, typeIdx) || "bottle",
       });
     } catch {
-      // Skip rows with unparseable dates.
+      skipped += 1;
     }
   }
 
-  return feeds;
+  return { feeds, skipped };
+}
+
+export function csvToFeeds(text: string): FeedLog[] {
+  return csvToFeedsWithStats(text).feeds;
 }
 
 export function mergeFeedsById(
