@@ -3,21 +3,61 @@
     import { get } from "svelte/store";
     import type { FeedLog } from "../lib/types";
     import { browser } from "$app/environment";
-    import { format, parse } from "@formkit/tempo";
+    import { format } from "@formkit/tempo";
     import { Chart } from "chart.js/auto";
+    import zoomPlugin from "chartjs-plugin-zoom";
     import "chartjs-adapter-date-fns";
     import { milkConsumed, mlPerMinute } from "../lib/feed";
+    import {
+        defaultTimelineRange,
+        nightPeriodsInRange,
+    } from "../lib/timeline";
+
+    Chart.register(zoomPlugin);
 
     export let previousFeeds: FeedLog[] = [];
     let feedTimeline: Chart | undefined = undefined;
 
-    interface ChartInterface {
-        x: Date[];
-        y: number;
-        fedMilk: number;
-        start: string;
-        end: string;
-    }
+    const nightShadePlugin = {
+        id: "nightShade",
+        beforeDatasetsDraw(chart: Chart) {
+            const xScale = chart.scales.x;
+            if (!xScale) {
+                return;
+            }
+            const min = xScale.min;
+            const max = xScale.max;
+            if (min === undefined || max === undefined) {
+                return;
+            }
+
+            const periods = nightPeriodsInRange(min, max);
+            if (periods.length === 0) {
+                return;
+            }
+
+            const { ctx, chartArea } = chart;
+            const isDark =
+                typeof document !== "undefined" &&
+                document.documentElement.classList.contains("dark");
+
+            ctx.save();
+            ctx.fillStyle = isDark
+                ? "rgba(255, 255, 255, 0.06)"
+                : "rgba(0, 0, 0, 0.06)";
+            for (const [start, end] of periods) {
+                const x1 = xScale.getPixelForValue(start);
+                const x2 = xScale.getPixelForValue(end);
+                ctx.fillRect(
+                    x1,
+                    chartArea.top,
+                    x2 - x1,
+                    chartArea.bottom - chartArea.top,
+                );
+            }
+            ctx.restore();
+        },
+    };
 
     export async function updateTimeline(previousFeeds: FeedLog[]) {
         if (!browser) {
@@ -25,16 +65,21 @@
         }
 
         if (previousFeeds.length === 0) {
-            if (feedTimeline instanceof Chart) {
-                feedTimeline.destroy();
-                feedTimeline = undefined;
-            }
             return;
         }
 
         await tick();
 
         const rate = get(mlPerMinute);
+
+        const startMs = previousFeeds.map((feed) =>
+            new Date(feed.start).getTime(),
+        );
+        const endMs = previousFeeds.map((feed) =>
+            new Date(feed.end).getTime(),
+        );
+
+        const range = defaultTimelineRange(previousFeeds);
 
         const canvas = document.getElementById(
             "timelineChart",
@@ -60,15 +105,13 @@
                 datasets: [
                     {
                         label: "feeding",
-                        data: previousFeeds.map((feed, index) => {
-                            return {
-                                x: [feed.start, feed.end],
-                                y: 0,
-                                fedMilk: milkConsumed(feed, rate),
-                                start: format(feed.start, "HH:mm"),
-                                end: format(feed.end, "HH:mm"),
-                            }
-                        }),
+                        data: previousFeeds.map(
+                            (_, index) =>
+                                [startMs[index], endMs[index]] as [
+                                    number,
+                                    number,
+                                ],
+                        ),
                     },
                 ],
             },
@@ -77,15 +120,8 @@
                 responsive: true,
                 scales: {
                     x: {
-                        min: Math.min(
-                            ...previousFeeds.map((feed) =>
-                                parse(
-                                    format(feed.start, "full"),
-                                    "full",
-                                ).getTime(),
-                            ),
-                        ),
-                        max: Date.now(),
+                        min: range.min,
+                        max: range.max,
                         ticks: {
                             autoSkip: true,
                             maxTicksLimit: 4,
@@ -115,31 +151,44 @@
                     },
                 },
                 plugins: {
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: "x",
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: "x",
+                        },
+                        limits: {
+                            x: { min: "original", max: "original" },
+                        },
+                    },
                     tooltip: {
                         callbacks: {
                             title: () => "",
                             label: (item) => {
-                                const data = item.dataset.data[item.dataIndex] as ChartInterface
-                                if (!data) {
+                                const feed = previousFeeds[item.dataIndex];
+                                if (!feed) {
                                     return "";
                                 }
                                 return (
                                     " fed " +
-                                    data.fedMilk +
+                                    milkConsumed(feed, rate) +
                                     "ml" +
                                     " from " +
-                                    data.start +
+                                    format(feed.start, "HH:mm") +
                                     " to " +
-                                    data.end
+                                    format(feed.end, "HH:mm")
                                 );
                             },
                         },
                     },
                 },
             },
+            plugins: [nightShadePlugin],
         });
-
-        return () => {};
     }
 
     onMount(() => {
@@ -156,6 +205,11 @@
             <p>No feeds yet.</p>
         {:else}
             <canvas id="timelineChart"></canvas>
+            <button
+                on:click={() => feedTimeline?.resetZoom()}
+                class="mt-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                >Reset view</button
+            >
         {/if}
     </div>
 </div>
