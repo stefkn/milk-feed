@@ -242,6 +242,7 @@
             options: {
                 indexAxis: "y" as const,
                 responsive: true,
+                animation: false,
                 scales: {
                     x: {
                         min: range.min,
