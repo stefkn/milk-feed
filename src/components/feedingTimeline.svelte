@@ -20,6 +20,9 @@
     const ICON_INSET = 8;
     const ICON_Y_OFFSET = 12;
 
+    const BOTTLE_COLOR = "rgba(16, 185, 129, 0.85)";
+    const BREAST_COLOR = "rgba(168, 85, 247, 0.85)";
+
     function drawMoon(
         ctx: CanvasRenderingContext2D,
         x: number,
@@ -27,13 +30,30 @@
         r: number,
         color: string,
     ) {
-        ctx.save();
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.arc(x + r * 0.5, y - r * 0.2, r * 0.8, 0, Math.PI * 2);
-        ctx.fill("evenodd");
-        ctx.restore();
+        const size = Math.ceil(r * 3);
+        const off = document.createElement("canvas");
+        off.width = size;
+        off.height = size;
+        const octx = off.getContext("2d");
+        if (!octx) {
+            return;
+        }
+
+        const cx = size / 2;
+        const cy = size / 2;
+
+        octx.fillStyle = color;
+        octx.beginPath();
+        octx.arc(cx, cy, r, 0, Math.PI * 2);
+        octx.fill();
+
+        octx.globalCompositeOperation = "destination-out";
+        octx.fillStyle = "rgba(0, 0, 0, 1)";
+        octx.beginPath();
+        octx.arc(cx + r * 0.55, cy - r * 0.15, r * 0.85, 0, Math.PI * 2);
+        octx.fill();
+
+        ctx.drawImage(off, x - cx, y - cy);
     }
 
     function drawSun(
@@ -205,6 +225,17 @@
                             ],
                             y: 0,
                         })) as any,
+                        backgroundColor: previousFeeds.map((feed) =>
+                            feed.type === "breast"
+                                ? BREAST_COLOR
+                                : BOTTLE_COLOR,
+                        ),
+                        borderColor: previousFeeds.map((feed) =>
+                            feed.type === "breast"
+                                ? BREAST_COLOR
+                                : BOTTLE_COLOR,
+                        ),
+                        borderWidth: 1,
                     },
                 ],
             },
@@ -307,11 +338,29 @@
             <p>No feeds yet.</p>
         {:else}
             <canvas id="timelineChart"></canvas>
-            <button
-                on:click={resetTimelineView}
-                class="mt-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                >Reset view</button
-            >
+            <div class="flex items-center justify-between mt-2">
+                <div class="flex gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <span class="flex items-center gap-1">
+                        <span
+                            class="inline-block w-3 h-3 rounded-sm"
+                            style="background-color: {BOTTLE_COLOR}"
+                        ></span>
+                        Bottle
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span
+                            class="inline-block w-3 h-3 rounded-sm"
+                            style="background-color: {BREAST_COLOR}"
+                        ></span>
+                        Breast
+                    </span>
+                </div>
+                <button
+                    on:click={resetTimelineView}
+                    class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                    >Reset view</button
+                >
+            </div>
         {/if}
     </div>
 </div>
