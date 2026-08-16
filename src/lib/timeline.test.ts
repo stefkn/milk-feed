@@ -70,9 +70,22 @@ describe("nightPeriodsInRange", () => {
     const min = new Date("2024-01-01T00:00:00").getTime();
     const max = new Date("2024-01-03T00:00:00").getTime();
     const periods = nightPeriodsInRange(min, max);
-    expect(periods).toHaveLength(2);
-    expect(periods[0][0]).toBe(new Date("2024-01-01T20:00:00").getTime());
-    expect(periods[1][0]).toBe(new Date("2024-01-02T20:00:00").getTime());
+    expect(periods).toHaveLength(3);
+    expect(periods[0][0]).toBe(new Date("2024-01-01T00:00:00").getTime());
+    expect(periods[1][0]).toBe(new Date("2024-01-01T20:00:00").getTime());
+    expect(periods[2][0]).toBe(new Date("2024-01-02T20:00:00").getTime());
+  });
+
+  it("includes the early-morning tail of the previous night", () => {
+    const min = new Date("2024-01-02T02:00:00").getTime();
+    const max = new Date("2024-01-02T08:00:00").getTime();
+    const periods = nightPeriodsInRange(min, max);
+    expect(periods).toEqual([
+      [
+        new Date("2024-01-02T02:00:00").getTime(),
+        new Date("2024-01-02T06:00:00").getTime(),
+      ],
+    ]);
   });
 
   it("clamps nights to the requested range", () => {
@@ -89,7 +102,7 @@ describe("nightPeriodsInRange", () => {
   });
 
   it("uses the configured night hours", () => {
-    const min = new Date("2024-01-01T00:00:00").getTime();
+    const min = new Date("2024-01-01T06:00:00").getTime();
     const max = new Date("2024-01-02T12:00:00").getTime();
     const periods = nightPeriodsInRange(min, max, 21, 5);
     expect(periods).toEqual([

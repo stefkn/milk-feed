@@ -36,8 +36,13 @@ export function nightPeriodsInRange(
   const lastDay = new Date(maxMs);
   lastDay.setHours(0, 0, 0, 0);
 
+  // Start one day earlier so a night that began before `min` but ends in the
+  // early hours of `min`'s day (00:00–06:00) is still included.
+  const startDay = new Date(firstDay);
+  startDay.setDate(startDay.getDate() - 1);
+
   for (
-    const day = new Date(firstDay);
+    const day = new Date(startDay);
     day.getTime() <= lastDay.getTime();
     day.setDate(day.getDate() + 1)
   ) {
