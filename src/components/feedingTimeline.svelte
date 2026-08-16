@@ -102,17 +102,16 @@
         feedTimeline = new Chart(ctx, {
             type: "bar",
             data: {
-                labels: previousFeeds.map((_, index) => index),
                 datasets: [
                     {
                         label: "feeding",
-                        data: previousFeeds.map(
-                            (_, index) =>
-                                [startMs[index], endMs[index]] as [
-                                    number,
-                                    number,
-                                ],
-                        ),
+                        data: previousFeeds.map((_, index) => ({
+                            x: [startMs[index], endMs[index]] as [
+                                number,
+                                number,
+                            ],
+                            y: 0,
+                        })) as any,
                     },
                 ],
             },
@@ -138,12 +137,14 @@
                             },
                             unit: "minute",
                         },
+                        stacked: true,
                         type: "time",
                         border: {
                             color: "gray",
                         },
                     },
                     y: {
+                        stacked: true,
                         ticks: {
                             display: false,
                         },
