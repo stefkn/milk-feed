@@ -269,10 +269,7 @@
         if (dueMs === undefined) {
             return;
         }
-        const delay = dueMs - Date.now();
-        if (delay <= 0) {
-            return;
-        }
+        const delay = Math.max(0, dueMs - Date.now());
         reminderTimeout = window.setTimeout(showReminderNotification, delay);
     }
 
