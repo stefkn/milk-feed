@@ -3,12 +3,16 @@
     import localforage from "localforage";
     import { format } from "@formkit/tempo";
     import type { FeedLog } from "$lib/types";
-    import { feedElapsedMs, feedElapsedSeconds, generateFeedId } from "$lib/feed";
+    import { feedElapsedMs, feedElapsedSeconds, generateFeedId, timeUntilNextFeed, formatTimeUntil } from "$lib/feed";
+
+    export let previousFeeds: FeedLog[] = [];
 
     let currentTime = format(new Date(), {
         date: "short",
         time: "short",
     });
+
+    let now = Date.now();
 
     /**
      * @type {number | undefined}
@@ -43,6 +47,8 @@
               )
             : 0;
 
+    $: nextFeedDueSeconds = timeUntilNextFeed(previousFeeds, now);
+
     function toggleSticky() {
         isSticky = !isSticky;
     }
@@ -61,6 +67,7 @@
     }
 
     function updateCurrentTime() {
+        now = Date.now();
         currentTime = format(new Date(), {
             date: "short",
             time: "short",
@@ -257,6 +264,11 @@
         </button>
     </div>
     <h3>Now: {currentTime}</h3>
+    <p class="text-sm">
+        Next feed: {nextFeedDueSeconds === undefined
+            ? "—"
+            : formatTimeUntil(nextFeedDueSeconds)}
+    </p>
     <div class="flex items-center space-between my-2">
         {#if isFeeding && !isPaused}
             <div role="status" class="mr-4">

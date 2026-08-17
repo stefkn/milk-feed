@@ -14,6 +14,9 @@ import {
   formatTimeSince,
   DEFAULT_ML_PER_MINUTE,
   feedsSpanMultipleDays,
+  medianFeedInterval,
+  timeUntilNextFeed,
+  formatTimeUntil,
 } from "./feed";
 import type { FeedLog } from "./types";
 
@@ -348,5 +351,82 @@ describe("formatTimeSince", () => {
 
   it("shows hours and minutes", () => {
     expect(formatTimeSince(2 * 60 * 60 + 14 * 60)).toBe("2h 14m ago");
+  });
+});
+
+describe("medianFeedInterval", () => {
+  it("returns undefined with fewer than two feeds", () => {
+    expect(medianFeedInterval([])).toBeUndefined();
+    expect(medianFeedInterval([makeFeed()])).toBeUndefined();
+  });
+
+  it("returns the median gap between feed starts", () => {
+    const feeds = [
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T03:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T06:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T10:00:00") }),
+    ];
+    // gaps: 3h, 3h, 4h -> median 3h
+    expect(medianFeedInterval(feeds)).toBe(3 * 60 * 60 * 1000);
+  });
+
+  it("averages the two middle gaps for an even count", () => {
+    const feeds = [
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T02:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T04:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T08:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T12:00:00") }),
+    ];
+    // gaps: 2h, 2h, 4h, 4h -> median (2+4)/2 = 3h
+    expect(medianFeedInterval(feeds)).toBe(3 * 60 * 60 * 1000);
+  });
+});
+
+describe("timeUntilNextFeed", () => {
+  it("returns undefined when there are no feeds", () => {
+    expect(timeUntilNextFeed([])).toBeUndefined();
+  });
+
+  it("estimates seconds until the next feed from the median interval", () => {
+    const feeds = [
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T03:00:00") }),
+    ];
+    const now = new Date("2024-01-01T04:00:00").getTime();
+    expect(timeUntilNextFeed(feeds, now)).toBe(2 * 60 * 60);
+  });
+
+  it("clamps to zero when already due", () => {
+    const feeds = [
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T03:00:00") }),
+    ];
+    const now = new Date("2024-01-01T08:00:00").getTime();
+    expect(timeUntilNextFeed(feeds, now)).toBe(0);
+  });
+});
+
+describe("formatTimeUntil", () => {
+  it("shows due now for non-positive values", () => {
+    expect(formatTimeUntil(0)).toBe("due now");
+    expect(formatTimeUntil(-5)).toBe("due now");
+  });
+
+  it("shows in <1m under a minute", () => {
+    expect(formatTimeUntil(30)).toBe("in <1m");
+  });
+
+  it("shows minutes under an hour", () => {
+    expect(formatTimeUntil(45 * 60)).toBe("in 45m");
+  });
+
+  it("shows whole hours", () => {
+    expect(formatTimeUntil(2 * 60 * 60)).toBe("in 2h");
+  });
+
+  it("shows hours and minutes", () => {
+    expect(formatTimeUntil(2 * 60 * 60 + 14 * 60)).toBe("in 2h 14m");
   });
 });
