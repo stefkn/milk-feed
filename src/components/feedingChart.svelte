@@ -6,7 +6,7 @@
     import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
     import Chart from "chart.js/auto";
-    import { milkConsumed, mlPerMinute, DEFAULT_ML_PER_MINUTE } from "../lib/feed";
+    import { milkConsumed, mlPerMinute, DEFAULT_ML_PER_MINUTE, feedsSpanMultipleDays } from "../lib/feed";
 
     const CHART_FEEDING_TIME = "feeding_time";
     const CHART_FEEDING_SIZE = "bottle_size";
@@ -80,8 +80,11 @@
             return;
         }
 
+        const spanMultipleDays = feedsSpanMultipleDays(previousFeeds);
         const previousFeedTimes = previousFeeds.map((feed) =>
-            format(feed.start, { time: "short" }),
+            spanMultipleDays
+                ? format(feed.start, { date: "short", time: "short" })
+                : format(feed.start, { time: "short" }),
         );
 
         const rate = get(mlPerMinute);
