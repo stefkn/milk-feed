@@ -17,19 +17,26 @@
 	let qrDataUrl = "";
 	let shareUrl = "";
 	let copied = false;
+	let qrRequestId = 0;
 
 	async function refreshQr() {
 		if (!browser || !isHost || !code) {
+			qrRequestId += 1;
 			qrDataUrl = "";
 			shareUrl = "";
 			return;
 		}
+		const requestId = ++qrRequestId;
 		shareUrl = `${window.location.origin}${window.location.pathname}?session=${encodeURIComponent(code)}`;
 		const { toDataURL } = await import("qrcode");
-		qrDataUrl = await toDataURL(shareUrl, {
+		const dataUrl = await toDataURL(shareUrl, {
 			width: 200,
 			margin: 1,
 		});
+		if (requestId !== qrRequestId) {
+			return;
+		}
+		qrDataUrl = dataUrl;
 	}
 
 	$: code, isHost, refreshQr();

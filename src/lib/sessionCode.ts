@@ -33,6 +33,7 @@ const WORDS = [
 ] as const;
 
 const WORD_COUNT = WORDS.length;
+const WORD_SET = new Set<string>(WORDS);
 
 export function generateSessionCode(random: () => number = Math.random): string {
   const pick = () => WORDS[Math.floor(random() * WORD_COUNT)];
@@ -40,7 +41,10 @@ export function generateSessionCode(random: () => number = Math.random): string 
 }
 
 export function isValidSessionCode(code: string): boolean {
-  return /^[a-z]+(-[a-z]+){2}$/.test(code);
+  if (!/^[a-z]+(-[a-z]+){2}$/.test(code)) {
+    return false;
+  }
+  return code.split("-").every((word) => WORD_SET.has(word));
 }
 
 export { WORDS };

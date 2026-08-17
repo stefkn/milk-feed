@@ -3,7 +3,7 @@
 	import { browser } from "$app/environment";
 	import localforage from "localforage";
 	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
-	import { feedsToCsv, csvToFeedsWithStats, mergeFeedsById } from "../lib/csv";
+	import { feedsToCsv, csvToFeedsWithStats } from "../lib/csv";
 	import { sortFeedsByStart } from "../lib/feed";
 	import { activeFeeds, mergeFeedsLWW, stampFeed } from "../lib/sync";
 	import type { SyncMessage } from "../lib/sync";
@@ -108,8 +108,11 @@
 		}
 
 		const { feeds, skipped } = csvToFeedsWithStats(await file.text());
-		const imported = feeds.map((feed) => stampFeed(feed));
-		previousFeeds = sortFeedsByStart(mergeFeedsById(previousFeeds, imported));
+		const existingIds = new Set(previousFeeds.map((feed) => feed.feedId));
+		const imported = feeds.map((feed) =>
+			existingIds.has(feed.feedId) ? feed : stampFeed(feed),
+		);
+		previousFeeds = sortFeedsByStart(mergeFeedsLWW(previousFeeds, imported));
 		persistFeeds();
 		broadcastFeeds();
 		refreshComponents();
