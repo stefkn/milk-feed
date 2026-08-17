@@ -108,14 +108,8 @@
 		}
 
 		const { feeds, skipped } = csvToFeedsWithStats(await file.text());
-		const existingIds = new Set(previousFeeds.map((feed) => feed.feedId));
-		const imported = feeds.map((feed) =>
-			existingIds.has(feed.feedId) ? feed : stampFeed(feed),
-		);
-		previousFeeds = sortFeedsByStart(mergeFeedsLWW(previousFeeds, imported));
-		persistFeeds();
-		broadcastFeeds();
-		refreshComponents();
+		const imported = feeds.map((feed) => stampFeed(feed));
+		applyFeeds(mergeFeedsLWW(previousFeeds, imported));
 		input.value = "";
 
 		const skippedNote = skipped > 0 ? ` (${skipped} skipped)` : "";
