@@ -1,9 +1,11 @@
 <script lang="ts">
     import { onMount, onDestroy, createEventDispatcher } from "svelte";
     import localforage from "localforage";
+    import { browser } from "$app/environment";
     import { format } from "@formkit/tempo";
     import type { FeedLog } from "$lib/types";
     import { feedElapsedMs, feedElapsedSeconds, generateFeedId, timeUntilNextFeed, formatTimeUntil } from "$lib/feed";
+    import { nextFeedDueMs, DEFAULT_REMINDER_SETTINGS } from "$lib/reminders";
 
     export let previousFeeds: FeedLog[] = [];
 
@@ -37,6 +39,11 @@
     let feedType = "bottle";
     let feedDurationSeconds = 0;
 
+    let reminderSettings = { ...DEFAULT_REMINDER_SETTINGS };
+    let reminderTimeout: number | undefined;
+    let showReminderConfig = false;
+    let reminderNotice = "";
+
     const BOTTLE_PRESETS = [120, 150, 180, 210];
 
     $: remainingPercent =
@@ -48,6 +55,8 @@
             : 0;
 
     $: nextFeedDueSeconds = timeUntilNextFeed(previousFeeds, now);
+
+    $: previousFeeds, reminderSettings, scheduleReminder();
 
     function toggleSticky() {
         isSticky = !isSticky;
@@ -223,6 +232,82 @@
         }
     }
 
+    function persistReminderSettings() {
+        localforage
+            .setItem("reminderSettings", reminderSettings)
+            .catch(function (err) {
+                console.error(err);
+            });
+    }
+
+    function showReminderNotification() {
+        if (!browser || !("Notification" in window)) {
+            return;
+        }
+        if (Notification.permission !== "granted") {
+            return;
+        }
+        const notification = new Notification("MilkFeed", {
+            body: "Time for the next feed",
+        });
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+    }
+
+    function scheduleReminder() {
+        if (!browser) {
+            return;
+        }
+        if (reminderTimeout !== undefined) {
+            window.clearTimeout(reminderTimeout);
+            reminderTimeout = undefined;
+        }
+        if (!reminderSettings.enabled) {
+            return;
+        }
+        const dueMs = nextFeedDueMs(previousFeeds, reminderSettings);
+        if (dueMs === undefined) {
+            return;
+        }
+        const delay = Math.max(0, dueMs - Date.now());
+        reminderTimeout = window.setTimeout(showReminderNotification, delay);
+    }
+
+    async function handleReminderToggle(event: Event) {
+        const enabled = (event.target as HTMLInputElement).checked;
+        reminderNotice = "";
+        if (enabled) {
+            if (!("Notification" in window)) {
+                reminderNotice =
+                    "Notifications aren't supported in this browser.";
+                return;
+            }
+            if (Notification.permission === "denied") {
+                reminderNotice =
+                    "Notification permission was denied. Enable it in your browser settings.";
+                return;
+            }
+            if (Notification.permission !== "granted") {
+                const permission = await Notification.requestPermission();
+                if (permission !== "granted") {
+                    reminderNotice = "Notification permission was not granted.";
+                    return;
+                }
+            }
+        }
+        reminderSettings = { ...reminderSettings, enabled };
+        persistReminderSettings();
+        scheduleReminder();
+    }
+
+    function handleSettingsChange() {
+        reminderSettings = { ...reminderSettings };
+        persistReminderSettings();
+        scheduleReminder();
+    }
+
     onMount(() => {
         updateCurrentTime();
         clockInterval = setInterval(updateCurrentTime, 1000);
@@ -245,11 +330,33 @@
             .catch(function (err) {
                 console.error(err);
             });
+
+        localforage
+            .getItem("reminderSettings")
+            .then((value: any) => {
+                if (value && typeof value.enabled === "boolean") {
+                    reminderSettings = {
+                        enabled: value.enabled,
+                        mode: value.mode === "fixed" ? "fixed" : "auto",
+                        fixedIntervalHours: Number.isFinite(
+                            Number(value.fixedIntervalHours),
+                        )
+                            ? Number(value.fixedIntervalHours)
+                            : DEFAULT_REMINDER_SETTINGS.fixedIntervalHours,
+                    };
+                }
+            })
+            .catch(function (err) {
+                console.error(err);
+            });
     });
 
     onDestroy(() => {
         clearInterval(stopwatchInterval);
         clearInterval(clockInterval);
+        if (reminderTimeout !== undefined) {
+            clearTimeout(reminderTimeout);
+        }
     });
 </script>
 
@@ -269,6 +376,65 @@
             ? "—"
             : formatTimeUntil(nextFeedDueSeconds)}
     </p>
+    <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <label class="flex items-center gap-2 text-sm">
+            <input
+                type="checkbox"
+                checked={reminderSettings.enabled}
+                on:change={handleReminderToggle}
+            />
+            Remind me when the next feed is due
+        </label>
+        {#if reminderNotice}
+            <p class="mt-2 text-xs text-amber-700 dark:text-amber-400">{reminderNotice}</p>
+        {/if}
+        {#if reminderSettings.enabled}
+            <button
+                type="button"
+                on:click={() => (showReminderConfig = !showReminderConfig)}
+                class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-purple-700 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                aria-expanded={showReminderConfig}
+            >
+                {showReminderConfig ? "Hide" : "Show"} reminder settings
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class:rotate-180={showReminderConfig}
+                    ><polyline points="6 9 12 15 18 9"></polyline></svg
+                >
+            </button>
+            {#if showReminderConfig}
+                <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <select
+                        bind:value={reminderSettings.mode}
+                        on:change={handleSettingsChange}
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                        <option value="auto">Auto (from schedule)</option>
+                        <option value="fixed">Fixed interval</option>
+                    </select>
+                    {#if reminderSettings.mode === "fixed"}
+                        <input
+                            type="number"
+                            min="1"
+                            step="0.5"
+                            bind:value={reminderSettings.fixedIntervalHours}
+                            on:change={handleSettingsChange}
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        />
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">hours</span>
+                    {/if}
+                </div>
+            {/if}
+        {/if}
+    </div>
     <div class="flex items-center space-between my-2">
         {#if isFeeding && !isPaused}
             <div role="status" class="mr-4">
