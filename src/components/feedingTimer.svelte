@@ -84,7 +84,7 @@
     }
 
     function _setStopWatchInterval() {
-        stopwatchInterval = setInterval(updateFeedDuration, 1000);
+        stopwatchInterval = window.setInterval(updateFeedDuration, 1000);
     }
 
     function startFeedingTimer() {
@@ -103,7 +103,7 @@
     }
 
     function stopFeedingTimer() {
-        clearInterval(stopwatchInterval);
+        window.clearInterval(stopwatchInterval);
         if (isPaused && pauseStartedAt !== undefined) {
             pausedDurationMs += Date.now() - pauseStartedAt;
             pauseStartedAt = undefined;
@@ -151,7 +151,7 @@
             _setStopWatchInterval();
         } else {
             isPaused = true;
-            clearInterval(stopwatchInterval);
+            window.clearInterval(stopwatchInterval);
             pauseStartedAt = Date.now();
             updateFeedDuration();
         }
@@ -310,7 +310,7 @@
 
     onMount(() => {
         updateCurrentTime();
-        clockInterval = setInterval(updateCurrentTime, 1000);
+        clockInterval = window.setInterval(updateCurrentTime, 1000);
 
         localforage
             .getItem("bottleSize")
