@@ -41,6 +41,8 @@
 
     let reminderSettings = { ...DEFAULT_REMINDER_SETTINGS };
     let reminderTimeout: number | undefined;
+    let showReminderConfig = false;
+    let reminderNotice = "";
 
     const BOTTLE_PRESETS = [120, 150, 180, 210];
 
@@ -275,10 +277,24 @@
 
     async function handleReminderToggle(event: Event) {
         const enabled = (event.target as HTMLInputElement).checked;
-        if (enabled && "Notification" in window) {
-            const permission = await Notification.requestPermission();
-            if (permission !== "granted") {
+        reminderNotice = "";
+        if (enabled) {
+            if (!("Notification" in window)) {
+                reminderNotice =
+                    "Notifications aren't supported in this browser.";
                 return;
+            }
+            if (Notification.permission === "denied") {
+                reminderNotice =
+                    "Notification permission was denied. Enable it in your browser settings.";
+                return;
+            }
+            if (Notification.permission !== "granted") {
+                const permission = await Notification.requestPermission();
+                if (permission !== "granted") {
+                    reminderNotice = "Notification permission was not granted.";
+                    return;
+                }
             }
         }
         reminderSettings = { ...reminderSettings, enabled };
@@ -369,28 +385,54 @@
             />
             Remind me when the next feed is due
         </label>
+        {#if reminderNotice}
+            <p class="mt-2 text-xs text-amber-700 dark:text-amber-400">{reminderNotice}</p>
+        {/if}
         {#if reminderSettings.enabled}
-            <div class="flex flex-wrap items-center gap-2 mt-2">
-                <select
-                    bind:value={reminderSettings.mode}
-                    on:change={handleSettingsChange}
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            <button
+                type="button"
+                on:click={() => (showReminderConfig = !showReminderConfig)}
+                class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-purple-700 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                aria-expanded={showReminderConfig}
+            >
+                {showReminderConfig ? "Hide" : "Show"} reminder settings
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class:rotate-180={showReminderConfig}
+                    ><polyline points="6 9 12 15 18 9"></polyline></svg
                 >
-                    <option value="auto">Auto (from schedule)</option>
-                    <option value="fixed">Fixed interval</option>
-                </select>
-                {#if reminderSettings.mode === "fixed"}
-                    <input
-                        type="number"
-                        min="1"
-                        step="0.5"
-                        bind:value={reminderSettings.fixedIntervalHours}
+            </button>
+            {#if showReminderConfig}
+                <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <select
+                        bind:value={reminderSettings.mode}
                         on:change={handleSettingsChange}
-                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                    <span class="text-sm">hours</span>
-                {/if}
-            </div>
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                        <option value="auto">Auto (from schedule)</option>
+                        <option value="fixed">Fixed interval</option>
+                    </select>
+                    {#if reminderSettings.mode === "fixed"}
+                        <input
+                            type="number"
+                            min="1"
+                            step="0.5"
+                            bind:value={reminderSettings.fixedIntervalHours}
+                            on:change={handleSettingsChange}
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        />
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">hours</span>
+                    {/if}
+                </div>
+            {/if}
         {/if}
     </div>
     <div class="flex items-center space-between my-2">
