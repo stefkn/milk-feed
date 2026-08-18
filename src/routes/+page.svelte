@@ -145,7 +145,7 @@
 	});
 
 	onDestroy(() => {
-		window.clearTimeout(importStatusTimeout);
+		clearTimeout(importStatusTimeout);
 	});
 </script>
 
