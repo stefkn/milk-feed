@@ -174,4 +174,43 @@ describe("mergeFeedsById", () => {
     const existing = [makeFeed({ feedId: "a" })];
     expect(mergeFeedsById(existing, [])).toEqual(existing);
   });
+
+  it("keeps the last imported feed when ids are duplicated", () => {
+    const existing = [makeFeed({ feedId: "a", bottleSize: 100 })];
+    const imported = [
+      makeFeed({ feedId: "a", bottleSize: 200 }),
+      makeFeed({ feedId: "a", bottleSize: 300 }),
+    ];
+    const merged = mergeFeedsById(existing, imported);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].bottleSize).toBe(300);
+  });
+});
+
+describe("feedsToCsv (escaping edge cases)", () => {
+  it("round-trips a field containing a newline and comma", () => {
+    const feed = makeFeed({ type: "bottle\nlarge, cap" });
+    const [restored] = csvToFeeds(feedsToCsv([feed]));
+    expect(restored.type).toBe("bottle\nlarge, cap");
+  });
+});
+
+describe("csvToFeedsWithStats (parsing edge cases)", () => {
+  it("accepts Windows CRLF line endings", () => {
+    const csv = `${CSV_HEADERS.join(",")}\r\n1,2024-01-01T12:30:45,2024-01-01T12:45:45,900,120,30,,bottle\r\n`;
+    const { feeds } = csvToFeedsWithStats(csv);
+    expect(feeds).toHaveLength(1);
+    expect(feeds[0].feedId).toBe("1");
+  });
+
+  it("skips blank lines between rows", () => {
+    const csv = [
+      CSV_HEADERS.join(","),
+      "",
+      "1,2024-01-01T12:30:45,2024-01-01T12:45:45,900,120,30,,bottle",
+    ].join("\n");
+    const { feeds, skipped } = csvToFeedsWithStats(csv);
+    expect(feeds).toHaveLength(1);
+    expect(skipped).toBe(0);
+  });
 });

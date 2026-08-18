@@ -189,4 +189,43 @@ describe("clampRangeToMax", () => {
   it("exposes a four-day default limit", () => {
     expect(MAX_TIMELINE_RANGE_MS).toBe(4 * 24 * 60 * 60 * 1000);
   });
+
+  it("clamps using a custom maximum range", () => {
+    expect(clampRangeToMax(0, 5000, 1000)).toEqual({ min: 2000, max: 3000 });
+  });
+});
+
+describe("nightPeriodsInRange (edge cases)", () => {
+  it("returns no periods for a zero-length range", () => {
+    const t = new Date("2024-01-01T12:00:00").getTime();
+    expect(nightPeriodsInRange(t, t)).toEqual([]);
+  });
+});
+
+describe("dayPeriodsInRange (edge cases)", () => {
+  it("uses the configured night hours", () => {
+    const min = new Date("2024-01-01T00:00:00").getTime();
+    const max = new Date("2024-01-02T00:00:00").getTime();
+    expect(dayPeriodsInRange(min, max, 22, 5)).toEqual([
+      [
+        new Date("2024-01-01T05:00:00").getTime(),
+        new Date("2024-01-01T22:00:00").getTime(),
+      ],
+    ]);
+  });
+});
+
+describe("defaultTimelineRange (edge cases)", () => {
+  it("extends to the end of a feed that finishes in the future", () => {
+    const now = new Date("2024-01-01T12:00:00").getTime();
+    const feeds = [
+      makeFeed({
+        start: new Date("2024-01-01T11:50:00"),
+        end: new Date("2024-01-01T13:00:00"),
+      }),
+    ];
+    const range = defaultTimelineRange(feeds, now);
+    expect(range.max).toBe(new Date("2024-01-01T13:05:00").getTime());
+    expect(range.min).toBe(new Date("2024-01-01T11:20:00").getTime());
+  });
 });
