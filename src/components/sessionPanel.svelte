@@ -179,6 +179,10 @@
 						<p class="text-sm text-gray-600 dark:text-gray-300">
 							Share this phrase (or the QR code) with your partner:
 						</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							Both devices need a working internet connection (Wi-Fi or
+							mobile data) for the session to connect.
+						</p>
 						<p
 							class="text-2xl font-mono tracking-wide text-gray-900 dark:text-white"
 						>
