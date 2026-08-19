@@ -2,7 +2,6 @@
 	import { createEventDispatcher } from "svelte";
 	import { browser } from "$app/environment";
 	import type { SessionStatus } from "$lib/session";
-	import { isValidSessionCode } from "$lib/sessionCode";
 
 	export let status: SessionStatus = "disconnected";
 	export let code: string = "";
@@ -11,9 +10,6 @@
 
 	const dispatch = createEventDispatcher();
 
-	let joinCode = "";
-	let joinError = "";
-	let showJoinInput = false;
 	let qrDataUrl = "";
 	let shareUrl = "";
 	let copied = false;
@@ -41,30 +37,6 @@
 
 	$: code, isHost, refreshQr();
 
-	function handleStart() {
-		dispatch("start");
-	}
-
-	function openJoinInput() {
-		showJoinInput = true;
-		joinError = "";
-	}
-
-	function handleJoinSubmit() {
-		const trimmed = joinCode.trim().toLowerCase();
-		if (!trimmed) {
-			return;
-		}
-		if (!isValidSessionCode(trimmed)) {
-			joinError =
-				"That session phrase looks wrong. It should be three words separated by dashes.";
-			return;
-		}
-		dispatch("join", trimmed);
-		joinCode = "";
-		showJoinInput = false;
-	}
-
 	async function handleCopy() {
 		if (!browser) {
 			return;
@@ -91,55 +63,7 @@
 </script>
 
 <div class="max-w-xl m-auto mt-2">
-	{#if status === "disconnected" && !code}
-		{#if showJoinInput}
-			<form
-				on:submit|preventDefault={handleJoinSubmit}
-				class="flex flex-col gap-2 p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"
-			>
-				<div class="flex gap-2 items-center">
-					<input
-						type="text"
-						bind:value={joinCode}
-						placeholder="Enter session phrase"
-						autocomplete="off"
-						class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-					/>
-					<button
-						type="submit"
-						class="text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-full text-sm px-4 py-2.5"
-						>Join</button
-					>
-					<button
-						type="button"
-						on:click={() => (showJoinInput = false)}
-						class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-						>Cancel</button
-					>
-				</div>
-				{#if joinError}
-					<p
-						class="text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg p-2 dark:text-red-200 dark:bg-red-900 dark:border-red-700"
-					>
-						{joinError}
-					</p>
-				{/if}
-			</form>
-		{:else}
-			<div class="flex gap-2 justify-center">
-				<button
-					on:click={handleStart}
-					class="text-white bg-purple-700 hover:bg-purple-800 font-medium rounded-full text-sm px-4 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700"
-					>Start shared session</button
-				>
-				<button
-					on:click={openJoinInput}
-					class="text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-full text-sm px-4 py-2.5"
-					>Join shared session</button
-				>
-			</div>
-		{/if}
-	{:else}
+	{#if code}
 		<div
 			class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"
 		>

@@ -34,6 +34,9 @@
 	let timelineComponent: TimelineInterface;
 	let fileInput: HTMLInputElement;
 	let isMenuOpen = false;
+	let showJoinInput = false;
+	let joinCode = "";
+	let joinError = "";
 	let importStatus = "";
 	let importStatusTimeout: number | undefined;
 	let isDarkMode: boolean = browser
@@ -50,6 +53,40 @@
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
+		showJoinInput = false;
+		joinError = "";
+	}
+
+	function openJoinInput() {
+		showJoinInput = true;
+		joinError = "";
+	}
+
+	function cancelJoinInput() {
+		showJoinInput = false;
+		joinCode = "";
+		joinError = "";
+	}
+
+	function handleJoinSubmit() {
+		const trimmed = joinCode.trim().toLowerCase();
+		if (!trimmed) {
+			return;
+		}
+		if (!isValidSessionCode(trimmed)) {
+			joinError =
+				"That session phrase looks wrong. It should be three words separated by dashes.";
+			return;
+		}
+		joinSession(trimmed);
+		joinCode = "";
+		showJoinInput = false;
+		isMenuOpen = false;
+	}
+
+	function handleStartSession() {
+		isMenuOpen = false;
+		startSession();
 	}
 
 	function persistFeeds() {
@@ -285,6 +322,11 @@
 		<div class="flex justify-between max-w-xl m-auto">
 			<h1 class="text-3xl">milkfeed</h1>
 			<div class="flex gap-2">
+				<button
+					on:click={handleToggleNightVision}
+					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
+					>night mode</button
+				>
 				<div class="relative">
 					<button
 						on:click={toggleMenu}
@@ -317,24 +359,230 @@
 					>
 					{#if isMenuOpen}
 						<div
-							class="absolute right-0 z-10 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700"
+							class="absolute right-0 z-10 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700"
 						>
-							<button
-								on:click={() => {
-									handleExportCsv();
-									isMenuOpen = false;
-								}}
-								class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
-								>Export CSV</button
-							>
-							<button
-								on:click={() => {
-									fileInput.click();
-									isMenuOpen = false;
-								}}
-								class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
-								>Import CSV</button
-							>
+							{#if showJoinInput}
+								<form on:submit|preventDefault={handleJoinSubmit} class="p-2">
+									<input
+										type="text"
+										bind:value={joinCode}
+										placeholder="Enter session phrase"
+										autocomplete="off"
+										class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+									/>
+									{#if joinError}
+										<p class="mt-1 text-xs text-red-700 dark:text-red-200">
+											{joinError}
+										</p>
+									{/if}
+									<div class="flex gap-1 mt-2">
+										<button
+											type="submit"
+											class="flex-1 text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded-lg text-sm px-3 py-1.5"
+											>Join</button
+										>
+										<button
+											type="button"
+											on:click={cancelJoinInput}
+											class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-1.5"
+											>Cancel</button
+										>
+									</div>
+								</form>
+							{:else}
+								<button
+									on:click={() => {
+										handleToggleLightDarkMode();
+										isMenuOpen = false;
+									}}
+									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									{#if isDarkMode}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="16"
+											height="16"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											class="feather feather-sun shrink-0"
+											><circle cx="12" cy="12" r="5"></circle><line
+												x1="12"
+												y1="1"
+												x2="12"
+												y2="3"
+											></line><line
+												x1="12"
+												y1="21"
+												x2="12"
+												y2="23"
+											></line><line
+												x1="4.22"
+												y1="4.22"
+												x2="5.64"
+												y2="5.64"
+											></line><line
+												x1="18.36"
+												y1="18.36"
+												x2="19.78"
+												y2="19.78"
+											></line><line
+												x1="1"
+												y1="12"
+												x2="3"
+												y2="12"
+											></line><line
+												x1="21"
+												y1="12"
+												x2="23"
+												y2="12"
+											></line><line
+												x1="4.22"
+												y1="19.78"
+												x2="5.64"
+												y2="18.36"
+											></line><line
+												x1="18.36"
+												y1="5.64"
+												x2="19.78"
+												y2="4.22"
+											></line></svg
+										>
+										<span>Light mode</span>
+									{:else}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="16"
+											height="16"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											class="feather feather-moon shrink-0"
+											><path
+												d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+											></path></svg
+										>
+										<span>Dark mode</span>
+									{/if}
+								</button>
+								<button
+									on:click={handleStartSession}
+									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="feather feather-radio shrink-0"
+										><circle cx="12" cy="12" r="2"></circle><path
+											d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"
+										></path></svg
+									>
+									<span>Start shared session</span>
+								</button>
+								<button
+									on:click={openJoinInput}
+									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="feather feather-log-in shrink-0"
+										><path
+											d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+										></path><polyline
+											points="10 17 15 12 10 7"
+										></polyline><line
+											x1="15"
+											y1="12"
+											x2="3"
+											y2="12"
+										></line></svg
+									>
+									<span>Join shared session</span>
+								</button>
+								<button
+									on:click={() => {
+										handleExportCsv();
+										isMenuOpen = false;
+									}}
+									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="feather feather-download shrink-0"
+										><path
+											d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+										></path><polyline
+											points="7 10 12 15 17 10"
+										></polyline><line
+											x1="12"
+											y1="15"
+											x2="12"
+											y2="3"
+										></line></svg
+									>
+									<span>Export CSV</span>
+								</button>
+								<button
+									on:click={() => {
+										fileInput.click();
+										isMenuOpen = false;
+									}}
+									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="feather feather-upload shrink-0"
+										><path
+											d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+										></path><polyline
+											points="17 8 12 3 7 8"
+										></polyline><line
+											x1="12"
+											y1="3"
+											x2="12"
+											y2="15"
+										></line></svg
+									>
+									<span>Import CSV</span>
+								</button>
+							{/if}
 						</div>
 					{/if}
 				</div>
@@ -345,75 +593,6 @@
 					bind:this={fileInput}
 					on:change={handleImportCsv}
 				/>
-				<button
-					on:click={handleToggleLightDarkMode}
-					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
-				>
-					{#if isDarkMode}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="feather feather-sun"
-							><circle cx="12" cy="12" r="5"></circle><line
-								x1="12"
-								y1="1"
-								x2="12"
-								y2="3"
-							></line><line x1="12" y1="21" x2="12" y2="23"
-							></line><line
-								x1="4.22"
-								y1="4.22"
-								x2="5.64"
-								y2="5.64"
-							></line><line
-								x1="18.36"
-								y1="18.36"
-								x2="19.78"
-								y2="19.78"
-							></line><line x1="1" y1="12" x2="3" y2="12"
-							></line><line x1="21" y1="12" x2="23" y2="12"
-							></line><line
-								x1="4.22"
-								y1="19.78"
-								x2="5.64"
-								y2="18.36"
-							></line><line
-								x1="18.36"
-								y1="5.64"
-								x2="19.78"
-								y2="4.22"
-							></line></svg
-						>
-					{:else}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="feather feather-moon"
-							><path
-								d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-							></path></svg
-						>
-					{/if}
-				</button>
-				<button
-					on:click={handleToggleNightVision}
-					class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
-					>night mode</button
-				>
 			</div>
 		</div>
 
@@ -422,8 +601,6 @@
 			code={sessionCode}
 			isHost={isHost}
 			error={sessionError}
-			on:start={() => startSession()}
-			on:join={(e) => joinSession(e.detail)}
 			on:disconnect={() => disconnectSession()}
 		/>
 
