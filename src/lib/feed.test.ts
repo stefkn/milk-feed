@@ -430,3 +430,132 @@ describe("formatTimeUntil", () => {
     expect(formatTimeUntil(2 * 60 * 60 + 14 * 60)).toBe("in 2h 14m");
   });
 });
+
+describe("milkConsumed (edge cases)", () => {
+  it("clamps a negative estimatedMilk override to zero", () => {
+    const feed = makeFeed({ type: "breast", duration: 600, estimatedMilk: -25 });
+    expect(milkConsumed(feed, 10)).toBe(0);
+  });
+
+  it("clamps a negative breast duration to zero", () => {
+    const feed = makeFeed({ type: "breast", duration: -600 });
+    expect(milkConsumed(feed, 10)).toBe(0);
+  });
+
+  it("coerces a string estimatedMilk override", () => {
+    const feed = makeFeed({
+      type: "breast",
+      duration: 600,
+      estimatedMilk: "75" as unknown as number,
+    });
+    expect(milkConsumed(feed, 10)).toBe(75);
+  });
+});
+
+describe("totalDuration (edge cases)", () => {
+  it("treats missing or NaN durations as zero", () => {
+    const feeds = [
+      makeFeed({ duration: 30 }),
+      makeFeed({ duration: Number.NaN }),
+      makeFeed({ duration: undefined as unknown as number }),
+    ];
+    expect(totalDuration(feeds)).toBe(30);
+  });
+});
+
+describe("medianFeedInterval (edge cases)", () => {
+  it("sorts unsorted input before computing gaps", () => {
+    const feeds = [
+      makeFeed({ start: new Date("2024-01-01T03:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T06:00:00") }),
+    ];
+    expect(medianFeedInterval(feeds)).toBe(3 * 60 * 60 * 1000);
+  });
+
+  it("ignores zero-length gaps from coincident feed starts", () => {
+    const feeds = [
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T01:00:00") }),
+    ];
+    expect(medianFeedInterval(feeds)).toBe(1 * 60 * 60 * 1000);
+  });
+
+  it("considers only the most recent feeds in the window", () => {
+    const feeds = [0, 1, 2, 3, 4, 5, 10].map((hour) =>
+      makeFeed({
+        start: new Date(`2024-01-01T${String(hour).padStart(2, "0")}:00:00`),
+      }),
+    );
+    expect(medianFeedInterval(feeds, 3)).toBe(3 * 60 * 60 * 1000);
+  });
+});
+
+describe("timeUntilNextFeed (edge cases)", () => {
+  it("returns undefined with a single feed", () => {
+    expect(timeUntilNextFeed([makeFeed()])).toBeUndefined();
+  });
+
+  it("floors partial seconds", () => {
+    const feeds = [
+      makeFeed({ start: new Date("2024-01-01T00:00:00") }),
+      makeFeed({ start: new Date("2024-01-01T03:00:00") }),
+    ];
+    const dueMs = new Date("2024-01-01T06:00:00").getTime();
+    expect(timeUntilNextFeed(feeds, dueMs - 2500)).toBe(2);
+  });
+});
+
+describe("formatTimeUntil (boundaries)", () => {
+  it("crosses from under a minute to a full minute", () => {
+    expect(formatTimeUntil(59)).toBe("in <1m");
+    expect(formatTimeUntil(60)).toBe("in 1m");
+  });
+
+  it("crosses from minutes to a whole hour", () => {
+    expect(formatTimeUntil(3599)).toBe("in 59m");
+    expect(formatTimeUntil(3600)).toBe("in 1h");
+  });
+});
+
+describe("formatTimeSince (boundaries)", () => {
+  it("crosses from just now to a full minute", () => {
+    expect(formatTimeSince(59)).toBe("just now");
+    expect(formatTimeSince(60)).toBe("1m ago");
+  });
+
+  it("crosses from minutes to a whole hour", () => {
+    expect(formatTimeSince(3599)).toBe("59m ago");
+    expect(formatTimeSince(3600)).toBe("1h ago");
+  });
+});
+
+describe("applyFeedEdit (safety)", () => {
+  it("does not mutate the input feed", () => {
+    const feed = makeFeed({
+      feedId: "x",
+      start: new Date("2024-01-01T00:00:00"),
+      end: new Date("2024-01-01T00:05:00"),
+      bottleSize: 100,
+    });
+    applyFeedEdit(feed, "bottleSize", "250");
+    expect(feed.bottleSize).toBe(100);
+    expect(feed.duration).toBe(0);
+  });
+
+  it("recomputes duration when the end time is edited", () => {
+    const feed = makeFeed({
+      start: new Date("2024-01-01T00:00:00"),
+      end: new Date("2024-01-01T00:05:00"),
+    });
+    const edited = applyFeedEdit(feed, "end", "2024-01-01T00:10:00");
+    expect(edited.duration).toBe(600);
+  });
+});
+
+describe("feedElapsedMs (clamp)", () => {
+  it("clamps to zero when paused time exceeds elapsed", () => {
+    expect(feedElapsedMs(10000, 0, 20000)).toBe(0);
+  });
+});
