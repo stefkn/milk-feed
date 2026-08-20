@@ -4,6 +4,7 @@
     import PreviousFeed from "./previousFeed.svelte";
     import type { FeedLog } from '../lib/types';
     import { totalMilk, totalDuration, feedsOnDate, timeSinceLastFeed, formatTimeSince, timeUntilNextFeed, formatTimeUntil, mlPerMinute } from "../lib/feed";
+    import { activeFeeds, tombstoneFeed } from "../lib/sync";
 
     import "../app.css";
     
@@ -14,11 +15,12 @@
     let sortOrder: "oldest" | "newest" = "oldest";
     let now = new Date();
 
-    $: todayFeeds = feedsOnDate(previousFeeds, now);
-    $: sinceLastFeed = timeSinceLastFeed(previousFeeds, now.getTime());
-    $: nextFeedDueSeconds = timeUntilNextFeed(previousFeeds, now.getTime());
+    $: active = activeFeeds(previousFeeds);
+    $: todayFeeds = feedsOnDate(active, now);
+    $: sinceLastFeed = timeSinceLastFeed(active, now.getTime());
+    $: nextFeedDueSeconds = timeUntilNextFeed(active, now.getTime());
     $: displayedFeeds =
-        sortOrder === "newest" ? [...previousFeeds].reverse() : previousFeeds;
+        sortOrder === "newest" ? [...active].reverse() : active;
 
     function toggleSortOrder() {
         sortOrder = sortOrder === "oldest" ? "newest" : "oldest";
@@ -49,7 +51,9 @@
     });
 
     function deletePreviousFeed(event: any) {
-        const newPreviousFeeds = previousFeeds.filter((f) => f.feedId !== event.detail.feedId);
+        const newPreviousFeeds = previousFeeds.map((f) =>
+            f.feedId === event.detail.feedId ? tombstoneFeed(f) : f,
+        );
         dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
 
@@ -57,7 +61,7 @@
         if (!window.confirm("Delete all previous feeds? This cannot be undone.")) {
             return;
         }
-        const newPreviousFeeds: FeedLog[] = [];
+        const newPreviousFeeds = previousFeeds.map((f) => tombstoneFeed(f));
         dispatch('updatepreviousfeeds', newPreviousFeeds);
     }
 
@@ -75,7 +79,7 @@
 <ul
     class="max-w-xl text-gray-500 list-disc list-inside dark:text-gray-400 m-auto"
 >
-    {#if previousFeeds.length === 0}
+    {#if active.length === 0}
         <p class="text-left">No previous feeds.</p>
     {:else}
         <div class="flex justify-end mb-1">
@@ -88,17 +92,17 @@
         <div class="w-full dark:bg-gray-800 rounded-lg p-4">
             <div class="flex gap-4 justify-between">
                 <p>
-                    Total feeds: {previousFeeds.length}
+                    Total feeds: {active.length}
                 </p>
                 <p>
-                    Total milk: {totalMilk(previousFeeds, $mlPerMinute)}ml
+                    Total milk: {totalMilk(active, $mlPerMinute)}ml
                 </p>
                 <p>
                     Total time: 
-                    {#if totalDuration(previousFeeds) > 60 }
-                        {Math.floor(totalDuration(previousFeeds) / 60)} mins
+                    {#if totalDuration(active) > 60 }
+                        {Math.floor(totalDuration(active) / 60)} mins
                     {:else}
-                        {totalDuration(previousFeeds)} secs
+                        {totalDuration(active)} secs
                     {/if}
                 </p>
             </div>

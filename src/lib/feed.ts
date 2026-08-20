@@ -208,6 +208,7 @@ export function applyFeedEdit(
     0,
     diffSeconds(updatedFeed.end, updatedFeed.start),
   );
+  updatedFeed.updatedAt = Date.now();
   return updatedFeed;
 }
 
