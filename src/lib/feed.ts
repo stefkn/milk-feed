@@ -2,7 +2,7 @@ import { parse, diffSeconds } from "@formkit/tempo";
 import { writable } from "svelte/store";
 import type { FeedLog } from "./types";
 
-export const DEFAULT_ML_PER_MINUTE = 10;
+export const DEFAULT_ML_PER_MINUTE = 1;
 
 export const mlPerMinute = writable(DEFAULT_ML_PER_MINUTE);
 
