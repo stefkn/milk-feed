@@ -9,6 +9,8 @@ export type FeedLog = {
     remainingMilk: number;
     estimatedMilk?: number;
     type: string;
+    updatedAt?: number;
+    deletedAt?: number;
 }
 
 export interface FeedingChartInterface {
