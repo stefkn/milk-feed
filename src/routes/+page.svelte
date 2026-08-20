@@ -299,6 +299,12 @@
 		autoNightError = "";
 	}
 
+	function changeAutoNightCity() {
+		autoNightLocationQuery = "";
+		autoNightError = "";
+		showAutoNightInput = true;
+	}
+
 	async function saveAutoNightLocation() {
 		const query = autoNightLocationQuery.trim();
 		if (!query) {
@@ -687,7 +693,7 @@
 										>
 										<span class="flex flex-col items-start">
 											<span>Auto night mode</span>
-											{#if autoNightEnabled && autoNightLocation}
+											{#if autoNightLocation}
 												<span
 													class="text-xs text-gray-500 dark:text-gray-400"
 												>
@@ -714,6 +720,33 @@
 										>
 									{/if}
 								</button>
+								{#if autoNightLocation}
+									<button
+										on:click={changeAutoNightCity}
+										class="flex items-center gap-2 w-full pl-10 pr-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="16"
+											height="16"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											class="feather feather-map-pin shrink-0"
+											><path
+												d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+											></path><circle
+												cx="12"
+												cy="10"
+												r="3"
+											></circle></svg
+										>
+										<span>Change city</span>
+									</button>
+								{/if}
 								<button
 									on:click={handleStartSession}
 									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
