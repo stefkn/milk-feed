@@ -41,10 +41,12 @@
 
     let reminderSettings = { ...DEFAULT_REMINDER_SETTINGS };
     let reminderTimeout: number | undefined;
+    let lastReminderFiredAt = 0;
     let showReminderConfig = false;
     let reminderNotice = "";
 
     const BOTTLE_PRESETS = [120, 150, 180, 210];
+    const REMINDER_FIRE_COOLDOWN_MS = 60_000;
 
     $: remainingPercent =
         bottleSize > 0
@@ -256,6 +258,14 @@
         };
     }
 
+    function fireReminder() {
+        if (Date.now() - lastReminderFiredAt < REMINDER_FIRE_COOLDOWN_MS) {
+            return;
+        }
+        lastReminderFiredAt = Date.now();
+        showReminderNotification();
+    }
+
     function scheduleReminder() {
         if (!browser) {
             return;
@@ -272,7 +282,13 @@
             return;
         }
         const delay = Math.max(0, dueMs - Date.now());
-        reminderTimeout = window.setTimeout(showReminderNotification, delay);
+        reminderTimeout = window.setTimeout(fireReminder, delay);
+    }
+
+    function handleVisibilityChange() {
+        if (document.visibilityState === "visible") {
+            scheduleReminder();
+        }
     }
 
     async function handleReminderToggle(event: Event) {
@@ -311,6 +327,7 @@
     onMount(() => {
         updateCurrentTime();
         clockInterval = window.setInterval(updateCurrentTime, 1000);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
         localforage
             .getItem("bottleSize")
@@ -354,6 +371,7 @@
     onDestroy(() => {
         clearInterval(stopwatchInterval);
         clearInterval(clockInterval);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
         if (reminderTimeout !== undefined) {
             clearTimeout(reminderTimeout);
         }
