@@ -159,16 +159,3 @@ export function csvToFeedsWithStats(
 export function csvToFeeds(text: string): FeedLog[] {
   return csvToFeedsWithStats(text).feeds;
 }
-
-export function mergeFeedsById(
-  existing: FeedLog[],
-  imported: FeedLog[],
-): FeedLog[] {
-  const byId = new Map(existing.map((feed) => [feed.feedId, feed]));
-
-  for (const feed of imported) {
-    byId.set(feed.feedId, feed);
-  }
-
-  return Array.from(byId.values());
-}

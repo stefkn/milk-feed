@@ -5,7 +5,8 @@ import {
   totalDuration,
   timeUntilNextFeed,
 } from "./feed";
-import { feedsToCsv, csvToFeeds, mergeFeedsById } from "./csv";
+import { feedsToCsv, csvToFeeds } from "./csv";
+import { mergeFeedsLWW, stampFeed } from "./sync";
 import type { FeedLog } from "./types";
 
 function makeFeed(overrides: Partial<FeedLog> = {}): FeedLog {
@@ -103,9 +104,9 @@ describe("a day of feeding", () => {
         makeFeed({ feedId: "a", bottleSize: 200 }),
         makeFeed({ feedId: "b" }),
       ]),
-    );
+    ).map((feed) => stampFeed(feed));
 
-    const merged = mergeFeedsById(existing, imported);
+    const merged = mergeFeedsLWW(existing, imported);
 
     expect(merged.map((f) => f.feedId)).toEqual(["a", "b"]);
     expect(merged.find((f) => f.feedId === "a")?.bottleSize).toBe(200);
