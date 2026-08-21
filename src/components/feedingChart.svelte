@@ -190,7 +190,10 @@
         localforage
             .getItem("mlPerMinute")
             .then((value: any) => {
-                const parsed = Number(value);
+                const parsed =
+                    value === null || value === undefined || value === ""
+                        ? Number.NaN
+                        : Number(value);
                 const rate = Number.isFinite(parsed) && parsed >= 0
                     ? parsed
                     : DEFAULT_ML_PER_MINUTE;

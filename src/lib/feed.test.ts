@@ -107,8 +107,8 @@ describe("milkConsumed (breast feeds)", () => {
     expect(milkConsumed(feed, 10)).toBe(0);
   });
 
-  it("exposes a default rate for the UI", () => {
-    expect(DEFAULT_ML_PER_MINUTE).toBeGreaterThan(0);
+  it("defaults the estimated breast milk rate to 1 ml/min", () => {
+    expect(DEFAULT_ML_PER_MINUTE).toBe(1);
   });
 });
 
