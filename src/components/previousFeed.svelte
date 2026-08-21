@@ -56,11 +56,12 @@
             >
                 <div>
                     <label
-                        for="start"
+                        for={`start-${feed.feedId}`}
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >Start</label
                     >
                     <input
+                        id={`start-${feed.feedId}`}
                         type="datetime-local"
                         name="start"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-48"
@@ -71,11 +72,12 @@
 
                 <div>
                     <label
-                        for="end"
+                        for={`end-${feed.feedId}`}
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >End</label
                     >
                     <input
+                        id={`end-${feed.feedId}`}
                         type="datetime-local"
                         name="end"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-48"
@@ -86,11 +88,12 @@
 
                 <div>
                     <label
-                        for="duration"
+                        for={`duration-${feed.feedId}`}
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >Duration (s)</label
                     >
                     <input
+                        id={`duration-${feed.feedId}`}
                         type="number"
                         class="my-2 p-2.5 bg-gray-700 rounded-lg w-24"
                         bind:value={updatedFeedDuration}
@@ -100,11 +103,12 @@
 
                 <div>
                     <label
-                        for="type"
+                        for={`type-${feed.feedId}`}
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >Type</label
                     >
                     <select
+                        id={`type-${feed.feedId}`}
                         name="type"
                         class="my-2 p-2.5 bg-gray-500 rounded-lg w-28"
                         bind:value={updatedFeed.type}
@@ -117,11 +121,12 @@
 
                 <div>
                     <label
-                        for="bottleSize"
+                        for={`bottleSize-${feed.feedId}`}
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >Bottle Size (ml)</label
                     >
                     <input
+                        id={`bottleSize-${feed.feedId}`}
                         type="number"
                         name="bottleSize"
                         min="0"
@@ -134,11 +139,12 @@
 
                 <div>
                     <label
-                        for="remainingMilk"
+                        for={`remainingMilk-${feed.feedId}`}
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >Remaining Milk (ml)</label
                     >
                     <input
+                        id={`remainingMilk-${feed.feedId}`}
                         type="number"
                         name="remainingMilk"
                         min="0"
@@ -152,11 +158,12 @@
 
                 <div>
                     <label
-                        for="estimatedMilk"
+                        for={`estimatedMilk-${feed.feedId}`}
                         class="block text-sm font-medium text-gray-900 dark:text-white"
                         >Estimated Milk (ml)</label
                     >
                     <input
+                        id={`estimatedMilk-${feed.feedId}`}
                         type="number"
                         name="estimatedMilk"
                         min="0"
@@ -195,6 +202,7 @@
                 on:click={() => {
                     isEditing = !isEditing;
                 }}
+                aria-label={isEditing ? "Cancel editing feed" : "Edit feed"}
                 class="bg-blue-400 p-1 rounded-md h-8"
             >
                 <svg
@@ -215,6 +223,7 @@
             </button>
             <button
                 on:click={handleDelete}
+                aria-label="Delete feed"
                 class="bg-red-400 p-1 rounded-md h-8"
             >
                 <svg

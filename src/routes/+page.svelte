@@ -332,6 +332,7 @@
 						on:click={toggleMenu}
 						aria-haspopup="menu"
 						aria-expanded={isMenuOpen}
+						aria-label="Open menu"
 						class="text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300 font-medium rounded-full text-sm px-3 py-2.5 text-center mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900"
 						><svg
 							xmlns="http://www.w3.org/2000/svg"
