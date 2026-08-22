@@ -6,17 +6,16 @@ self.addEventListener("install", () => {
 
 self.addEventListener("activate", (event) => {
 	event.waitUntil(
-		caches
-			.keys()
-			.then((keys) =>
-				Promise.all(
-					keys
-						.filter((key) => key !== CACHE_NAME)
-						.map((key) => caches.delete(key)),
-				),
-			),
+		(async () => {
+			const keys = await caches.keys();
+			await Promise.all(
+				keys
+					.filter((key) => key !== CACHE_NAME)
+					.map((key) => caches.delete(key)),
+			);
+			await self.clients.claim();
+		})(),
 	);
-	self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -25,15 +24,37 @@ self.addEventListener("fetch", (event) => {
 	}
 
 	event.respondWith(
-		fetch(event.request)
-			.then((response) => {
-				const copy = response.clone();
-				caches
-					.open(CACHE_NAME)
-					.then((cache) => cache.put(event.request, copy))
-					.catch(() => {});
+		(async () => {
+			try {
+				const response = await fetch(event.request);
+				event.waitUntil(
+					caches
+						.open(CACHE_NAME)
+						.then((cache) =>
+							cache.put(event.request, response.clone()),
+						),
+				);
 				return response;
-			})
-			.catch(() => caches.match(event.request)),
+			} catch (err) {
+				const cached = await caches.match(event.request);
+				if (cached) {
+					return cached;
+				}
+				if (event.request.mode === "navigate") {
+					const shell = await caches.match("/");
+					if (shell) {
+						return shell;
+					}
+				}
+				return new Response(
+					"You're offline and this page isn't cached yet.",
+					{
+						status: 503,
+						statusText: "Service Unavailable",
+						headers: { "Content-Type": "text/plain" },
+					},
+				);
+			}
+		})(),
 	);
 });
