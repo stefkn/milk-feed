@@ -1,7 +1,13 @@
 const CACHE_NAME = "milk-feed-v1";
+const PRECACHE_URLS = ["/", "/manifest.webmanifest", "/icon.svg"];
 
-self.addEventListener("install", () => {
-	self.skipWaiting();
+self.addEventListener("install", (event) => {
+	event.waitUntil(
+		caches
+			.open(CACHE_NAME)
+			.then((cache) => cache.addAll(PRECACHE_URLS))
+			.then(() => self.skipWaiting()),
+	);
 });
 
 self.addEventListener("activate", (event) => {
@@ -27,13 +33,18 @@ self.addEventListener("fetch", (event) => {
 		(async () => {
 			try {
 				const response = await fetch(event.request);
-				event.waitUntil(
-					caches
-						.open(CACHE_NAME)
-						.then((cache) =>
-							cache.put(event.request, response.clone()),
-						),
-				);
+				if (
+					response.ok &&
+					new URL(event.request.url).origin === self.location.origin
+				) {
+					event.waitUntil(
+						caches
+							.open(CACHE_NAME)
+							.then((cache) =>
+								cache.put(event.request, response.clone()),
+							),
+					);
+				}
 				return response;
 			} catch (err) {
 				const cached = await caches.match(event.request);

@@ -1,5 +1,7 @@
+import { dev } from "$app/environment";
+
 export function registerServiceWorker() {
-	if (!("serviceWorker" in navigator)) {
+	if (dev || !("serviceWorker" in navigator)) {
 		return;
 	}
 	navigator.serviceWorker.register("/sw.js").catch((err) => {
