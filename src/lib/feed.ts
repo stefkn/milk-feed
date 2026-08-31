@@ -199,9 +199,6 @@ export function applyFeedEdit(
     case "type":
       updatedFeed.type = value;
       break;
-    case "duration":
-      updatedFeed.duration = Number(value);
-      break;
   }
 
   updatedFeed.duration = Math.max(

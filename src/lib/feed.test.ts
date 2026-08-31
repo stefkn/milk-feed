@@ -233,6 +233,11 @@ describe("applyFeedEdit", () => {
     expect(feed.duration).toBe(120);
   });
 
+  it("derives duration from start and end instead of a duration field", () => {
+    const feed = applyFeedEdit(base(), "duration", "9999");
+    expect(feed.duration).toBe(300);
+  });
+
   it("clamps duration to zero when end is before start", () => {
     const feed = applyFeedEdit(base(), "start", "2024-01-01T00:10:00");
     expect(feed.duration).toBe(0);
