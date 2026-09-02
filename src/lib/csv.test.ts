@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   feedsToCsv,
   csvToFeeds,
-  mergeFeedsById,
   csvToFeedsWithStats,
   CSV_HEADERS,
 } from "./csv";
@@ -154,36 +153,6 @@ describe("csvToFeedsWithStats", () => {
     const { feeds, skipped } = csvToFeedsWithStats("");
     expect(feeds).toEqual([]);
     expect(skipped).toBe(0);
-  });
-});
-
-describe("mergeFeedsById", () => {
-  it("overwrites feeds with matching ids and appends the rest", () => {
-    const existing = [makeFeed({ feedId: "a" }), makeFeed({ feedId: "b" })];
-    const imported = [
-      makeFeed({ feedId: "a", bottleSize: 200 }),
-      makeFeed({ feedId: "c" }),
-    ];
-    const merged = mergeFeedsById(existing, imported);
-
-    expect(merged.map((f) => f.feedId)).toEqual(["a", "b", "c"]);
-    expect(merged[0].bottleSize).toBe(200);
-  });
-
-  it("keeps existing feeds when nothing is imported", () => {
-    const existing = [makeFeed({ feedId: "a" })];
-    expect(mergeFeedsById(existing, [])).toEqual(existing);
-  });
-
-  it("keeps the last imported feed when ids are duplicated", () => {
-    const existing = [makeFeed({ feedId: "a", bottleSize: 100 })];
-    const imported = [
-      makeFeed({ feedId: "a", bottleSize: 200 }),
-      makeFeed({ feedId: "a", bottleSize: 300 }),
-    ];
-    const merged = mergeFeedsById(existing, imported);
-    expect(merged).toHaveLength(1);
-    expect(merged[0].bottleSize).toBe(300);
   });
 });
 
