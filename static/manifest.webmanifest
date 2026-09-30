@@ -1,0 +1,18 @@
+{
+	"name": "MilkFeed",
+	"short_name": "MilkFeed",
+	"description": "A minimalist baby feed logging app.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#dbeafe",
+	"theme_color": "#7c3aed",
+	"icons": [
+		{
+			"src": "/icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		}
+	]
+}
