@@ -46,10 +46,16 @@ describe("compareFeeds", () => {
 
   it("breaks ties by feedId deterministically", () => {
     expect(
-      compareFeeds(makeFeed({ feedId: "a", updatedAt: 1 }), makeFeed({ feedId: "b", updatedAt: 1 })),
+      compareFeeds(
+        makeFeed({ feedId: "a", updatedAt: 1 }),
+        makeFeed({ feedId: "b", updatedAt: 1 }),
+      ),
     ).toBeLessThan(0);
     expect(
-      compareFeeds(makeFeed({ feedId: "b", updatedAt: 1 }), makeFeed({ feedId: "a", updatedAt: 1 })),
+      compareFeeds(
+        makeFeed({ feedId: "b", updatedAt: 1 }),
+        makeFeed({ feedId: "a", updatedAt: 1 }),
+      ),
     ).toBeGreaterThan(0);
   });
 });
@@ -147,5 +153,29 @@ describe("tombstoneFeed", () => {
     expect(tombstoned.updatedAt).toBe(123);
     expect(tombstoned.deletedAt).toBe(123);
     expect(feed.deletedAt).toBeUndefined();
+  });
+});
+
+describe("concurrent versions", () => {
+  it("converges when two peers edit the same feed at the same timestamp", () => {
+    const a = makeFeed({ updatedAt: 100, bottleSize: 120 });
+    const b = makeFeed({ updatedAt: 100, bottleSize: 150 });
+    expect(mergeFeedsLWW([a], [b])).toEqual(mergeFeedsLWW([b], [a]));
+  });
+  it("prefers deletion over a live feed at the same version", () => {
+    const live = makeFeed({ updatedAt: 100 });
+    const deleted = makeFeed({ updatedAt: 100, deletedAt: 100 });
+    expect(mergeFeedsLWW([live], [deleted])).toEqual([deleted]);
+    expect(mergeFeedsLWW([deleted], [live])).toEqual([deleted]);
+  });
+  it("orders equivalent Date and JSON date representations equally", () => {
+    const a = makeFeed({ updatedAt: 100 });
+    const b = JSON.parse(JSON.stringify(a));
+    expect(compareFeeds(a, b)).toBe(0);
+  });
+  it("keeps successive mutations newer even with the same millisecond or a clock rollback", () => {
+    const original = makeFeed({ updatedAt: 100 });
+    expect(stampFeed(original, 50).updatedAt).toBe(101);
+    expect(tombstoneFeed(original, 100).updatedAt).toBe(101);
   });
 });

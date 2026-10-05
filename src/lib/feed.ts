@@ -1,4 +1,5 @@
 import { parse, diffSeconds } from "@formkit/tempo";
+import { stampFeed } from "./sync";
 import { writable } from "svelte/store";
 import type { FeedLog } from "./types";
 
@@ -23,7 +24,10 @@ export function milkConsumed(
 }
 
 export function generateFeedId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -205,8 +209,7 @@ export function applyFeedEdit(
     0,
     diffSeconds(updatedFeed.end, updatedFeed.start),
   );
-  updatedFeed.updatedAt = Date.now();
-  return updatedFeed;
+  return stampFeed(updatedFeed);
 }
 
 export function feedElapsedMs(
