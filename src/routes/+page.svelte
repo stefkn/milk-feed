@@ -7,6 +7,7 @@
 		FeedingChartInterface,
 		TimelineInterface,
 	} from "../lib/types";
+	import { feedsToJson, jsonToFeeds } from "../lib/backup";
 	import { feedsToCsv, csvToFeedsWithStats } from "../lib/csv";
 	import { sortFeedsByStart } from "../lib/feed";
 	import { activeFeeds, mergeFeedsLWW, stampFeed } from "../lib/sync";
@@ -139,14 +140,22 @@
 		refreshComponents();
 	}
 
-	function handleExportCsv() {
+	function handleExport(format: "csv" | "json" = "csv") {
 		if (!browser) {
 			return;
 		}
 
-		const blob = new Blob([feedsToCsv(activeFeeds(previousFeeds))], {
-			type: "text/csv;charset=utf-8;",
-		});
+		const blob = new Blob(
+			[
+				format === "json"
+					? feedsToJson(previousFeeds)
+					: feedsToCsv(activeFeedsList),
+			],
+			{
+				type:
+					format === "json" ? "application/json" : "text/csv;charset=utf-8;",
+			},
+		);
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
@@ -154,12 +163,12 @@
 		const date = `${today.getFullYear()}-${String(
 			today.getMonth() + 1,
 		).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-		link.download = `milk-feed-${date}.csv`;
+		link.download = `milk-feed-${date}.${format}`;
 		link.click();
 		URL.revokeObjectURL(url);
 	}
 
-	async function handleImportCsv(event: Event) {
+	async function handleImport(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
 
@@ -167,17 +176,26 @@
 			return;
 		}
 
-		const { feeds, skipped } = csvToFeedsWithStats(await file.text());
-		const imported = feeds.map((feed) => stampFeed(feed));
-		applyFeeds(mergeFeedsLWW(previousFeeds, imported));
-		input.value = "";
-
-		const skippedNote = skipped > 0 ? ` (${skipped} skipped)` : "";
-		importStatus = `Imported ${feeds.length} feeds${skippedNote}.`;
+		try {
+			const text = await file.text();
+			const isJson = file.name.toLowerCase().endsWith(".json");
+			const { feeds, skipped } = isJson
+				? { feeds: jsonToFeeds(text), skipped: 0 }
+				: csvToFeedsWithStats(text);
+			const imported = isJson ? feeds : feeds.map((feed) => stampFeed(feed));
+			applyFeeds(mergeFeedsLWW(previousFeeds, imported));
+			const skippedNote = skipped > 0 ? ` (${skipped} skipped)` : "";
+			importStatus = `Merged ${feeds.length} feeds${skippedNote}.`;
+		} catch (error) {
+			importStatus =
+				error instanceof Error ? error.message : "Could not read this backup.";
+		} finally {
+			input.value = "";
+		}
 		window.clearTimeout(importStatusTimeout);
 		importStatusTimeout = window.setTimeout(() => {
 			importStatus = "";
-		}, 4000);
+		}, 6000);
 	}
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
@@ -787,7 +805,7 @@
 								</button>
 								<button
 									on:click={() => {
-										handleExportCsv();
+										handleExport();
 										isMenuOpen = false;
 									}}
 									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
@@ -815,6 +833,14 @@
 								</button>
 								<button
 									on:click={() => {
+										handleExport("json");
+										isMenuOpen = false;
+									}}
+									class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+									>Export JSON backup</button
+								>
+								<button
+									on:click={() => {
 										fileInput.click();
 										isMenuOpen = false;
 									}}
@@ -839,7 +865,7 @@
 											y2="3"
 										></line></svg
 									>
-									<span>Import CSV</span>
+									<span>Import CSV / JSON backup</span>
 								</button>
 							{/if}
 						</div>
@@ -847,10 +873,10 @@
 				</div>
 				<input
 					type="file"
-					accept=".csv,text/csv"
+					accept=".csv,.json,text/csv,application/json"
 					class="hidden"
 					bind:this={fileInput}
-					on:change={handleImportCsv}
+					on:change={handleImport}
 				/>
 			</div>
 		</div>
