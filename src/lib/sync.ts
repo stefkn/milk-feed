@@ -23,9 +23,8 @@ export function isDeletedFeed(feed: FeedLog): boolean {
 /**
  * Total order over two feeds used for last-write-wins resolution.
  *
- * Feeds are compared by `updatedAt` first, then by `feedId` so concurrent
- * writes with the same timestamp still resolve deterministically on every
- * device (no divergence).
+ * Compare versions and IDs, then deletion timestamps and canonical content.
+ * Concurrent writes to the same ID and version converge on every device.
  */
 export function compareFeeds(a: FeedLog, b: FeedLog): number {
   const delta = feedVersion(a) - feedVersion(b);
@@ -38,7 +37,21 @@ export function compareFeeds(a: FeedLog, b: FeedLog): number {
   if (a.feedId > b.feedId) {
     return 1;
   }
-  return 0;
+  const deletedDelta = (Number(a.deletedAt) || 0) - (Number(b.deletedAt) || 0);
+  if (deletedDelta !== 0) return deletedDelta;
+  const contentKey = (feed: FeedLog) =>
+    JSON.stringify([
+      new Date(feed.start).getTime(),
+      new Date(feed.end).getTime(),
+      feed.duration,
+      feed.bottleSize,
+      feed.remainingMilk,
+      feed.estimatedMilk ?? null,
+      feed.type,
+    ]);
+  const aKey = contentKey(a),
+    bKey = contentKey(b);
+  return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
 }
 
 /**
@@ -77,12 +90,42 @@ export function activeFeeds(feeds: FeedLog[]): FeedLog[] {
 }
 
 export function stampFeed(feed: FeedLog, nowMs: number = Date.now()): FeedLog {
-  return { ...feed, updatedAt: nowMs };
+  return { ...feed, updatedAt: Math.max(nowMs, feedVersion(feed) + 1) };
 }
 
 export function tombstoneFeed(
   feed: FeedLog,
   nowMs: number = Date.now(),
 ): FeedLog {
-  return { ...feed, updatedAt: nowMs, deletedAt: nowMs };
+  const version = Math.max(nowMs, feedVersion(feed) + 1);
+  return { ...feed, updatedAt: version, deletedAt: version };
+}
+
+/** Undo only this operation's deletions, preserving additions and later edits. */
+export function undoFeedDeletions(
+  current: FeedLog[],
+  originals: FeedLog[],
+  deleted: FeedLog[],
+  nowMs: number = Date.now(),
+): FeedLog[] {
+  const originalsById = new Map(originals.map((feed) => [feed.feedId, feed]));
+  const deletedById = new Map(deleted.map((feed) => [feed.feedId, feed]));
+  return current.map((feed) => {
+    const original = originalsById.get(feed.feedId);
+    const deletion = deletedById.get(feed.feedId);
+    if (
+      !original ||
+      !deletion ||
+      !isDeletedFeed(feed) ||
+      feedVersion(feed) !== feedVersion(deletion) ||
+      feed.deletedAt !== deletion.deletedAt
+    )
+      return feed;
+    const restored = {
+      ...original,
+      updatedAt: Math.max(nowMs, feedVersion(feed) + 1),
+    };
+    delete restored.deletedAt;
+    return restored;
+  });
 }
