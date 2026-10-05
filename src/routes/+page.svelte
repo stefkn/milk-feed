@@ -2,11 +2,16 @@
 	import { onMount, onDestroy } from "svelte";
 	import { browser } from "$app/environment";
 	import localforage from "localforage";
-	import type { FeedLog, FeedingChartInterface, TimelineInterface } from "../lib/types";
+	import type {
+		FeedLog,
+		FeedingChartInterface,
+		TimelineInterface,
+	} from "../lib/types";
 	import { feedsToCsv, csvToFeedsWithStats } from "../lib/csv";
 	import { sortFeedsByStart } from "../lib/feed";
 	import { activeFeeds, mergeFeedsLWW, stampFeed } from "../lib/sync";
 	import type { SyncMessage } from "../lib/sync";
+
 	import {
 		createSession,
 		joinSession as joinPeerSession,
@@ -20,6 +25,9 @@
 	import FeedingChart from "../components/feedingChart.svelte";
 	import FeedingTimeline from "../components/feedingTimeline.svelte";
 	import SessionPanel from "../components/sessionPanel.svelte";
+	import QuickAddFeed from "../components/quickAddFeed.svelte";
+	import Toast from "../components/toast.svelte";
+	import { pushToast } from "../lib/toast";
 
 	import "../app.css";
 	import {
@@ -55,6 +63,8 @@
 	let isDarkMode: boolean = browser
 		? document.documentElement.classList.contains("dark")
 		: false;
+
+	let showQuickAdd = false;
 
 	let session: SessionHandle | null = null;
 	let sessionStatus: SessionStatus = "disconnected";
@@ -105,11 +115,9 @@
 	}
 
 	function persistFeeds() {
-		localforage
-			.setItem("previousFeeds", previousFeeds)
-			.catch(function (err) {
-				console.error(err);
-			});
+		localforage.setItem("previousFeeds", previousFeeds).catch(function (err) {
+			console.error(err);
+		});
 	}
 
 	function broadcastFeeds() {
@@ -174,6 +182,11 @@
 
 	function handleNewFeedFinished(event: CustomEvent<FeedLog>) {
 		applyFeeds([...previousFeeds, stampFeed(event.detail)]);
+	}
+
+	function handleQuickAdd(event: CustomEvent<FeedLog>) {
+		applyFeeds([...previousFeeds, stampFeed(event.detail)]);
+		pushToast("Feed added");
 	}
 
 	function updatePreviousFeeds(event: CustomEvent<FeedLog[]>) {
@@ -469,7 +482,7 @@
 		class="w-auto h-full bg-blue-100 m-auto max-w-3xl p-4 rounded-lg dark:bg-slate-900"
 	>
 		<div class="flex justify-between max-w-xl m-auto">
-			<h1 class="text-3xl">milkfeed</h1>
+			<h1 class="text-3xl">MilkFeed</h1>
 			<div class="flex gap-2">
 				<button
 					on:click={handleToggleNightVision}
@@ -499,17 +512,12 @@
 								y1="6"
 								x2="21"
 								y2="6"
-							></line><line
-								x1="3"
-								y1="18"
-								x2="21"
-								y2="18"
-							></line></svg
+							></line><line x1="3" y1="18" x2="21" y2="18"></line></svg
 						></button
 					>
 					{#if isMenuOpen}
 						<div
-							class="absolute right-0 z-10 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700"
+							class="absolute right-0 z-10 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700"
 						>
 							{#if showJoinInput}
 								<form on:submit|preventDefault={handleJoinSubmit} class="p-2">
@@ -595,41 +603,19 @@
 												y1="1"
 												x2="12"
 												y2="3"
-											></line><line
-												x1="12"
-												y1="21"
-												x2="12"
-												y2="23"
-											></line><line
+											></line><line x1="12" y1="21" x2="12" y2="23"></line><line
 												x1="4.22"
 												y1="4.22"
 												x2="5.64"
 												y2="5.64"
-											></line><line
-												x1="18.36"
-												y1="18.36"
-												x2="19.78"
-												y2="19.78"
-											></line><line
-												x1="1"
-												y1="12"
-												x2="3"
-												y2="12"
-											></line><line
+											></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"
+											></line><line x1="1" y1="12" x2="3" y2="12"></line><line
 												x1="21"
 												y1="12"
 												x2="23"
 												y2="12"
-											></line><line
-												x1="4.22"
-												y1="19.78"
-												x2="5.64"
-												y2="18.36"
-											></line><line
-												x1="18.36"
-												y1="5.64"
-												x2="19.78"
-												y2="4.22"
+											></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"
+											></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"
 											></line></svg
 										>
 										<span>Light mode</span>
@@ -645,8 +631,7 @@
 											stroke-linecap="round"
 											stroke-linejoin="round"
 											class="feather feather-moon shrink-0"
-											><path
-												d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+											><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
 											></path></svg
 										>
 										<span>Dark mode</span>
@@ -668,36 +653,25 @@
 											stroke-linecap="round"
 											stroke-linejoin="round"
 											class="feather feather-sunset shrink-0"
-											><path
-												d="M17 18a5 5 0 0 0-10 0"
-											></path><line
+											><path d="M17 18a5 5 0 0 0-10 0"></path><line
 												x1="12"
 												y1="9"
 												x2="12"
 												y2="2"
-											></line><line
-												x1="4.22"
-												y1="10.22"
-												x2="5.64"
-												y2="11.64"
-											></line><line x1="1" y1="18" x2="3" y2="18"
-											></line><line x1="21" y1="18" x2="23" y2="18"
-											></line><line
-												x1="18.36"
-												y1="11.64"
-												x2="19.78"
-												y2="10.22"
+											></line><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"
+											></line><line x1="1" y1="18" x2="3" y2="18"></line><line
+												x1="21"
+												y1="18"
+												x2="23"
+												y2="18"
+											></line><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"
 											></line><line x1="23" y1="22" x2="1" y2="22"
-											></line><polyline
-												points="16 5 12 9 8 5"
-											></polyline></svg
+											></line><polyline points="16 5 12 9 8 5"></polyline></svg
 										>
 										<span class="flex flex-col items-start">
 											<span>Auto night mode</span>
 											{#if autoNightLocation}
-												<span
-													class="text-xs text-gray-500 dark:text-gray-400"
-												>
+												<span class="text-xs text-gray-500 dark:text-gray-400">
 													{autoNightLocation.name}
 												</span>
 											{/if}
@@ -715,9 +689,7 @@
 											stroke-linecap="round"
 											stroke-linejoin="round"
 											class="feather feather-check shrink-0"
-											><polyline
-												points="20 6 9 17 4 12"
-											></polyline></svg
+											><polyline points="20 6 9 17 4 12"></polyline></svg
 										>
 									{/if}
 								</button>
@@ -737,17 +709,39 @@
 											stroke-linecap="round"
 											stroke-linejoin="round"
 											class="feather feather-map-pin shrink-0"
-											><path
-												d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
-											></path><circle
-												cx="12"
-												cy="10"
-												r="3"
-											></circle></svg
+											><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+											></path><circle cx="12" cy="10" r="3"></circle></svg
 										>
 										<span>Change city</span>
 									</button>
 								{/if}
+								<button
+									on:click={() => {
+										showQuickAdd = true;
+										isMenuOpen = false;
+									}}
+									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="shrink-0"
+										><line x1="12" y1="5" x2="12" y2="19"></line><line
+											x1="5"
+											y1="12"
+											x2="19"
+											y2="12"
+										></line></svg
+									>
+									<span>Add feed manually</span>
+								</button>
 								<button
 									on:click={handleStartSession}
 									class="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
@@ -784,13 +778,10 @@
 										stroke-linecap="round"
 										stroke-linejoin="round"
 										class="feather feather-users shrink-0"
-										><path
-											d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+										><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
 										></path><circle cx="9" cy="7" r="4"></circle><path
 											d="M23 21v-2a4 4 0 0 0-3-3.87"
-										></path><path
-											d="M16 3.13a4 4 0 0 1 0 7.75"
-										></path></svg
+										></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg
 									>
 									<span>Join shared session</span>
 								</button>
@@ -812,11 +803,8 @@
 										stroke-linecap="round"
 										stroke-linejoin="round"
 										class="feather feather-upload shrink-0"
-										><path
-											d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-										></path><polyline
-											points="17 8 12 3 7 8"
-										></polyline><line
+										><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+										></path><polyline points="17 8 12 3 7 8"></polyline><line
 											x1="12"
 											y1="3"
 											x2="12"
@@ -843,11 +831,8 @@
 										stroke-linecap="round"
 										stroke-linejoin="round"
 										class="feather feather-download shrink-0"
-										><path
-											d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-										></path><polyline
-											points="7 10 12 15 17 10"
-										></polyline><line
+										><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+										></path><polyline points="7 10 12 15 17 10"></polyline><line
 											x1="12"
 											y1="15"
 											x2="12"
@@ -873,12 +858,43 @@
 		<SessionPanel
 			status={sessionStatus}
 			code={sessionCode}
-			isHost={isHost}
+			{isHost}
 			error={sessionError}
 			on:disconnect={() => disconnectSession()}
 		/>
 
-		<FeedingTimer previousFeeds={activeFeedsList} on:newfeedfinished={handleNewFeedFinished} />
+		<FeedingTimer
+			previousFeeds={activeFeedsList}
+			on:newfeedfinished={handleNewFeedFinished}
+		/>
+
+		<div class="max-w-sm m-auto mt-2 flex justify-center">
+			<button
+				on:click={() => (showQuickAdd = true)}
+				class="text-sm text-cyan-700 hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200 font-medium inline-flex items-center gap-1"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><line x1="12" y1="5" x2="12" y2="19"></line><line
+						x1="5"
+						y1="12"
+						x2="19"
+						y2="12"
+					></line></svg
+				>
+				Add feed manually
+			</button>
+		</div>
+
+		<QuickAddFeed bind:open={showQuickAdd} on:addfeed={handleQuickAdd} />
 
 		{#if importStatus}
 			<div
@@ -889,16 +905,24 @@
 			</div>
 		{/if}
 
-		<FeedingTimeline previousFeeds={activeFeedsList} bind:this={timelineComponent} />
+		<FeedingTimeline
+			previousFeeds={activeFeedsList}
+			bind:this={timelineComponent}
+		/>
 
-		<FeedingChart previousFeeds={activeFeedsList} bind:this={feedingChartComponent} />
+		<FeedingChart
+			previousFeeds={activeFeedsList}
+			bind:this={feedingChartComponent}
+		/>
 
 		<div>
 			<h2 class="mt-4 text-xl max-w-xl m-auto">Previous Feeds</h2>
 			<PreviousFeedsList
+				on:requestquickadd={() => (showQuickAdd = true)}
 				{previousFeeds}
 				on:updatepreviousfeeds={updatePreviousFeeds}
 			/>
 		</div>
 	</div>
+	<Toast />
 </main>
